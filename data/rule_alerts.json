@@ -1,0 +1,662 @@
+[
+    {
+        "rule_id": "RULE_01",
+        "account": "abeerbhatnagar6537@paytm",
+        "timestamp": "2026-08-21T09:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "anjaliiyengar5563@okicici",
+        "timestamp": "2026-08-21T05:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "anthonybaral2979@paytm",
+        "timestamp": "2026-08-21T13:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "aradhanasehgal8587@oksbi",
+        "timestamp": "2026-08-21T17:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "baljiwanbora7885@paytm",
+        "timestamp": "2026-08-21T05:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "balveernagi8178@oksbi",
+        "timestamp": "2026-08-21T11:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "danieldutta8880@ybl",
+        "timestamp": "2026-08-21T11:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "eiravatikhurana2812@oksbi",
+        "timestamp": "2026-08-21T06:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "fitansanghvi9170@ybl",
+        "timestamp": "2026-08-21T08:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "gangaseshadri6894@okicici",
+        "timestamp": "2026-08-21T12:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "gaurisom2373@oksbi",
+        "timestamp": "2026-08-21T09:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "girishgara7403@okhdfcbank",
+        "timestamp": "2026-08-21T14:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "guneetvarty3807@paytm",
+        "timestamp": "2026-08-21T10:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "hemalchad4447@okhdfcbank",
+        "timestamp": "2026-08-21T06:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "hredhaandeep6152@okicici",
+        "timestamp": "2026-08-21T05:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "jairajwason8638@okicici",
+        "timestamp": "2026-08-21T15:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "jalsamani9067@ybl",
+        "timestamp": "2026-08-21T08:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "karanmital2797@oksbi",
+        "timestamp": "2026-08-21T09:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "krishvala6603@okhdfcbank",
+        "timestamp": "2026-08-21T13:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "mananpau170@okhdfcbank",
+        "timestamp": "2026-08-21T14:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "manyanazareth4512@paytm",
+        "timestamp": "2026-08-21T12:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "maxnarayan7802@okicici",
+        "timestamp": "2026-08-21T15:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "mugdhashan5061@paytm",
+        "timestamp": "2026-08-21T13:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "nihalgola7990@okicici",
+        "timestamp": "2026-08-21T06:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "nilimadada2622@oksbi",
+        "timestamp": "2026-08-21T11:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "oniswamy4881@oksbi",
+        "timestamp": "2026-08-21T04:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "oscardave7828@paytm",
+        "timestamp": "2026-08-21T16:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "qabildeshpande6052@oksbi",
+        "timestamp": "2026-08-21T07:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "rajatabutala606@okicici",
+        "timestamp": "2026-08-21T17:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "rishimenon8082@ybl",
+        "timestamp": "2026-08-21T14:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "rushilsaini3911@paytm",
+        "timestamp": "2026-08-21T17:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "saidasgupta2530@ybl",
+        "timestamp": "2026-08-21T08:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "samakshvirk245@oksbi",
+        "timestamp": "2026-08-21T12:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "tanayrattan7844@okicici",
+        "timestamp": "2026-08-21T10:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "tanmayigarde4928@paytm",
+        "timestamp": "2026-08-21T16:00:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "udyatimohanty4666@okicici",
+        "timestamp": "2026-08-21T15:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "vrishtisharma1328@okicici",
+        "timestamp": "2026-08-21T16:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "yauvaniprakash6659@okhdfcbank",
+        "timestamp": "2026-08-21T07:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "zashildevan5503@oksbi",
+        "timestamp": "2026-08-21T07:40:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_01",
+        "account": "zayyandash2516@okicici",
+        "timestamp": "2026-08-21T10:20:00+00:00",
+        "transaction_count": 15,
+        "reason": "More than 8 transactions within 5 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule04433@ybl",
+        "timestamp": "2026-08-19T19:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule107508@okhdfcbank",
+        "timestamp": "2026-08-19T22:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule11264@okicici",
+        "timestamp": "2026-08-19T23:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule126396@ybl",
+        "timestamp": "2026-08-19T23:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule133889@okhdfcbank",
+        "timestamp": "2026-08-19T23:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule14689@okicici",
+        "timestamp": "2026-08-19T19:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule147738@paytm",
+        "timestamp": "2026-08-20T00:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule15516@ybl",
+        "timestamp": "2026-08-20T00:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule163787@okhdfcbank",
+        "timestamp": "2026-08-20T00:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule177403@ybl",
+        "timestamp": "2026-08-20T01:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule186271@oksbi",
+        "timestamp": "2026-08-20T01:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule19349@okhdfcbank",
+        "timestamp": "2026-08-20T01:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule20507@okhdfcbank",
+        "timestamp": "2026-08-20T02:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule213680@okhdfcbank",
+        "timestamp": "2026-08-20T02:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule21441@oksbi",
+        "timestamp": "2026-08-19T20:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule22761@okhdfcbank",
+        "timestamp": "2026-08-20T02:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule238121@oksbi",
+        "timestamp": "2026-08-20T03:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule245570@okicici",
+        "timestamp": "2026-08-20T03:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule259280@paytm",
+        "timestamp": "2026-08-20T03:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule269347@okicici",
+        "timestamp": "2026-08-20T04:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule273534@ybl",
+        "timestamp": "2026-08-20T04:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule283453@oksbi",
+        "timestamp": "2026-08-20T04:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule296902@paytm",
+        "timestamp": "2026-08-20T05:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule33852@okhdfcbank",
+        "timestamp": "2026-08-19T20:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule44468@paytm",
+        "timestamp": "2026-08-19T20:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule53835@okicici",
+        "timestamp": "2026-08-19T21:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule69204@okicici",
+        "timestamp": "2026-08-19T21:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule79199@ybl",
+        "timestamp": "2026-08-19T21:49:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule81849@okicici",
+        "timestamp": "2026-08-19T22:09:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_02",
+        "account": "mule9716@okhdfcbank",
+        "timestamp": "2026-08-19T22:29:00+00:00",
+        "inflow": 85500.0,
+        "outflow": 95000.0,
+        "outflow_ratio": 1.1111,
+        "inflow_transaction_count": 9,
+        "reason": "Multiple incoming transactions followed by an outflow of more than 90% within 10 minutes"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser03485@paytm",
+        "timestamp": "2026-08-21T21:20:00+00:00",
+        "amount": 102220.0,
+        "account_age_days": 6,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser71541@ybl",
+        "timestamp": "2026-08-21T22:30:00+00:00",
+        "amount": 101798.0,
+        "account_age_days": 5,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser82084@okhdfcbank",
+        "timestamp": "2026-08-21T22:40:00+00:00",
+        "amount": 143667.0,
+        "account_age_days": 5,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser36996@okhdfcbank",
+        "timestamp": "2026-08-21T21:50:00+00:00",
+        "amount": 118625.0,
+        "account_age_days": 3,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser9208@okhdfcbank",
+        "timestamp": "2026-08-21T22:50:00+00:00",
+        "amount": 137899.0,
+        "account_age_days": 4,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser2127@okicici",
+        "timestamp": "2026-08-21T21:40:00+00:00",
+        "amount": 120337.0,
+        "account_age_days": 2,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser15820@okicici",
+        "timestamp": "2026-08-21T21:30:00+00:00",
+        "amount": 112812.0,
+        "account_age_days": 4,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser51075@oksbi",
+        "timestamp": "2026-08-21T22:10:00+00:00",
+        "amount": 117692.0,
+        "account_age_days": 2,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser49149@paytm",
+        "timestamp": "2026-08-21T22:00:00+00:00",
+        "amount": 126661.0,
+        "account_age_days": 6,
+        "reason": "High-value transaction from an account less than 7 days old"
+    },
+    {
+        "rule_id": "RULE_03",
+        "account": "newuser68314@okicici",
+        "timestamp": "2026-08-21T22:20:00+00:00",
+        "amount": 135051.0,
+        "account_age_days": 2,
+        "reason": "High-value transaction from an account less than 7 days old"
+    }
+]
