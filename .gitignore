@@ -1,0 +1,33 @@
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+
+# --- Python / Django (Backend & AI) ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+db.sqlite3
+
+# --- Node / React (Frontend) ---
+node_modules/
+dist/
+build/
+.npm
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- Hardhat / Solidity (Blockchain) ---
+cache/
+artifacts/
+coverage/
+coverage.json
+node_modules/
+
+# --- IDEs ---
+.vscode/
+.idea/
