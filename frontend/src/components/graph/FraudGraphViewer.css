@@ -1,0 +1,572 @@
+/**
+ * frontend/src/components/graph/FraudGraphViewer.css
+ * ====================================================
+ * TrustGraph 2026 — Graph Visualizer Stylesheet
+ * Dark-mode, glassmorphism, pulsing risk animations.
+ */
+
+/* ── Google Font import ──────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ── Custom Properties ───────────────────────────────────────────────────── */
+:root {
+  --tg-bg-base:        #0a0f1e;
+  --tg-bg-surface:     #111827;
+  --tg-bg-surface-2:   #1e293b;
+  --tg-bg-glass:       rgba(17, 24, 39, 0.75);
+  --tg-border:         rgba(99, 102, 241, 0.15);
+  --tg-border-glow:    rgba(99, 102, 241, 0.4);
+
+  --tg-text-primary:   #f1f5f9;
+  --tg-text-secondary: #94a3b8;
+  --tg-text-muted:     #64748b;
+
+  --tg-red:            #ef4444;
+  --tg-red-soft:       rgba(239, 68, 68, 0.15);
+  --tg-amber:          #f59e0b;
+  --tg-amber-soft:     rgba(245, 158, 11, 0.15);
+  --tg-green:          #10b981;
+  --tg-green-soft:     rgba(16, 185, 129, 0.15);
+  --tg-blue:           #3b82f6;
+  --tg-blue-soft:      rgba(59, 130, 246, 0.15);
+  --tg-indigo:         #6366f1;
+
+  --tg-radius:         12px;
+  --tg-radius-sm:      8px;
+  --tg-graph-height:   480px;
+}
+
+/* ── Root container ──────────────────────────────────────────────────────── */
+.tg-graph-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--tg-bg-base);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius);
+  padding: 16px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: var(--tg-text-primary);
+  min-height: 600px;
+}
+
+/* ── Stats bar ───────────────────────────────────────────────────────────── */
+.tg-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--tg-bg-surface);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+}
+
+.tg-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+}
+
+.tg-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--tg-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.tg-stat-value {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.tg-stat-high    { color: var(--tg-red); }
+.tg-stat-medium  { color: var(--tg-amber); }
+.tg-stat-low     { color: var(--tg-green); }
+.tg-stat-cluster { color: var(--tg-blue); font-size: 11px; font-weight: 700; }
+
+/* ── Verify button ───────────────────────────────────────────────────────── */
+.tg-verify-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: none;
+  border-radius: var(--tg-radius-sm);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.tg-verify-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.65);
+}
+
+.tg-verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Violations bar ──────────────────────────────────────────────────────── */
+.tg-violations-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tg-violation-chip {
+  padding: 3px 10px;
+  background: var(--tg-red-soft);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tg-red);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Verification badge ──────────────────────────────────────────────────── */
+.tg-verify-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--tg-radius-sm);
+  animation: tg-slide-down 0.3s ease;
+}
+
+@keyframes tg-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tg-verify-pending  { background: var(--tg-blue-soft);  border: 1px solid rgba(59,130,246,0.3); }
+.tg-verify-ok       { background: var(--tg-green-soft); border: 1px solid rgba(16,185,129,0.35); }
+.tg-verify-tampered { background: var(--tg-red-soft);   border: 1px solid rgba(239,68,68,0.35); }
+.tg-verify-error    { background: var(--tg-amber-soft); border: 1px solid rgba(245,158,11,0.3); }
+
+.tg-verify-icon { font-size: 20px; }
+
+.tg-verify-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top-color: var(--tg-blue);
+  border-radius: 50%;
+  animation: tg-spin 0.7s linear infinite;
+}
+
+@keyframes tg-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tg-verify-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--tg-text-primary);
+}
+
+.tg-verify-sub {
+  font-size: 11px;
+  color: var(--tg-red);
+  margin: 2px 0 0;
+}
+
+.tg-verify-link {
+  font-size: 11px;
+  color: var(--tg-blue);
+  text-decoration: none;
+  font-family: "Courier New", monospace;
+}
+
+.tg-verify-link:hover { text-decoration: underline; }
+
+/* ── Canvas area (graph + sidebar side-by-side) ──────────────────────────── */
+.tg-graph-canvas-area {
+  display: flex;
+  gap: 12px;
+  height: var(--tg-graph-height);
+}
+
+.tg-graph-canvas {
+  position: relative;
+  flex: 1;
+  background: var(--tg-bg-surface);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+  overflow: hidden;
+}
+
+/* ── Fit button ──────────────────────────────────────────────────────────── */
+.tg-fit-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  background: var(--tg-bg-surface-2);
+  border: 1px solid var(--tg-border);
+  border-radius: 6px;
+  color: var(--tg-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.tg-fit-btn:hover {
+  background: var(--tg-border-glow);
+  color: var(--tg-text-primary);
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────────── */
+.tg-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 12px;
+  background: var(--tg-bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+}
+
+.tg-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--tg-text-secondary);
+}
+
+.tg-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tg-legend-dashed {
+  width: 20px;
+  height: 2px;
+  border-top: 2px dashed var(--tg-red);
+  flex-shrink: 0;
+}
+
+/* ── Pulsing glow animation (applied to high-risk nodes via JS class) ──── */
+@keyframes tg-pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.5); }
+  50%       { box-shadow: 0 0 24px 10px rgba(239, 68, 68, 0.85); }
+}
+
+/* ── Entity Inspector Sidebar ────────────────────────────────────────────── */
+.tg-inspector {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--tg-bg-surface);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+  padding: 14px;
+  overflow-y: auto;
+  animation: tg-slide-right 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@keyframes tg-slide-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.tg-inspector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tg-inspector-role {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tg-indigo);
+  margin: 0 0 2px;
+}
+
+.tg-inspector-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--tg-text-primary);
+}
+
+.tg-inspector-id {
+  font-size: 10px;
+  color: var(--tg-text-muted);
+  font-family: "Courier New", monospace;
+  margin: 0;
+}
+
+.tg-inspector-close {
+  background: none;
+  border: none;
+  color: var(--tg-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.tg-inspector-close:hover { color: var(--tg-text-primary); }
+
+.tg-inspector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tg-inspector-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tg-text-muted);
+  margin: 0;
+}
+
+/* ── Risk meter ──────────────────────────────────────────────────────────── */
+.tg-risk-meter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tg-risk-badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.tg-risk-badge-high   { background: var(--tg-red-soft);   color: var(--tg-red);   border: 1px solid rgba(239,68,68,0.3); }
+.tg-risk-badge-medium { background: var(--tg-amber-soft); color: var(--tg-amber); border: 1px solid rgba(245,158,11,0.3); }
+.tg-risk-badge-low    { background: var(--tg-green-soft); color: var(--tg-green); border: 1px solid rgba(16,185,129,0.3); }
+
+.tg-risk-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tg-text-secondary);
+}
+
+.tg-risk-bar-bg {
+  height: 6px;
+  background: var(--tg-bg-surface-2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.tg-risk-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+.tg-risk-bar-fill.tg-risk-badge-high   { background: var(--tg-red); }
+.tg-risk-bar-fill.tg-risk-badge-medium { background: var(--tg-amber); }
+.tg-risk-bar-fill.tg-risk-badge-low    { background: var(--tg-green); }
+
+/* ── Generic chip ────────────────────────────────────────────────────────── */
+.tg-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--tg-blue-soft);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--tg-blue);
+}
+
+/* ── Metric grid ─────────────────────────────────────────────────────────── */
+.tg-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tg-metric-card {
+  background: var(--tg-bg-surface-2);
+  border: 1px solid var(--tg-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.tg-metric-label {
+  font-size: 9px;
+  color: var(--tg-text-muted);
+  margin: 0 0 3px;
+}
+
+.tg-metric-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tg-text-primary);
+  margin: 0;
+  font-family: "Courier New", monospace;
+}
+
+/* ── Alerts list ─────────────────────────────────────────────────────────── */
+.tg-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tg-alert-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--tg-red-soft);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fca5a5;
+}
+
+.tg-alert-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--tg-red);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: tg-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes tg-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── AI explanations panel ───────────────────────────────────────────────── */
+.tg-ai-panel {
+  background: var(--tg-bg-surface);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+  padding: 12px 14px;
+}
+
+.tg-ai-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--tg-indigo);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.tg-ai-explanations {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tg-ai-explanation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--tg-text-secondary);
+  line-height: 1.5;
+}
+
+.tg-ai-bullet {
+  color: var(--tg-indigo);
+  font-size: 9px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+/* ── Loading / error states ──────────────────────────────────────────────── */
+.tg-graph-loading,
+.tg-graph-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 300px;
+  color: var(--tg-text-secondary);
+  font-size: 14px;
+}
+
+.tg-graph-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--tg-indigo);
+  border-radius: 50%;
+  animation: tg-spin 0.8s linear infinite;
+}
+
+.tg-graph-error {
+  color: var(--tg-amber);
+  font-size: 18px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tg-graph-canvas-area {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .tg-graph-canvas {
+    height: 340px;
+  }
+
+  .tg-inspector {
+    width: 100%;
+  }
+
+  .tg-stats-bar {
+    gap: 8px;
+  }
+
+  .tg-verify-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
