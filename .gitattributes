@@ -1,0 +1,4 @@
+# Treat large data sets as binary so GitHub web UI stops crashing on diffs
+*.csv binary
+*.json -diff
+data/** linguist-generated=true
