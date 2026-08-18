@@ -1,0 +1,152 @@
+{
+  "tx_id": "TXN_99182746",
+  "composite_risk_score": 93,
+  "risk_tier": "CRITICAL",
+  "rule_violations": ["HIGH_VELOCITY_BURST", "MULE_FAN_IN_ANOMALY"],
+  "ml_anomaly_score": 0.89,
+  "graph_metrics": {
+    "in_degree_centrality": 0.82,
+    "community_cluster_id": "CLUSTER_MULE_04",
+    "shared_device_count": 5
+  },
+  "ai_explanations": [
+    "12 rapid incoming transfers from unlinked accounts within 8 minutes.",
+    "Receiver shares Device ID with 4 previously flagged entities.",
+    "Immediate fund forwarding ratio exceeds 94%."
+  ],
+  "graph_data": {
+    "nodes": [
+      {
+        "data": {
+          "id": "ACC_109283",
+          "label": "Sender (Victim)",
+          "type": "account",
+          "risk": 15,
+          "role": "Victim Node",
+          "in_degree_centrality": 0.12,
+          "out_degree_centrality": 0.03,
+          "alerts": ["RAPID_OUTBOUND"]
+        }
+      },
+      {
+        "data": {
+          "id": "ACC_882910",
+          "label": "Mule Aggregator",
+          "type": "account",
+          "risk": 93,
+          "role": "Mule Receiver",
+          "in_degree_centrality": 0.82,
+          "out_degree_centrality": 0.91,
+          "alerts": ["HIGH_VELOCITY_BURST", "MULE_FAN_IN_ANOMALY", "RAPID_FORWARD"]
+        }
+      },
+      {
+        "data": {
+          "id": "DEV_F892B1",
+          "label": "Device #F892B1",
+          "type": "device",
+          "risk": 90,
+          "role": "Shared Device",
+          "in_degree_centrality": 0.0,
+          "out_degree_centrality": 0.0,
+          "alerts": ["SHARED_DEVICE_CLUSTER"]
+        }
+      },
+      {
+        "data": {
+          "id": "ACC_771920",
+          "label": "Mule Layer 2",
+          "type": "account",
+          "risk": 88,
+          "role": "Exfiltration Mule",
+          "in_degree_centrality": 0.55,
+          "out_degree_centrality": 0.78,
+          "alerts": ["MULE_FAN_IN_ANOMALY", "RAPID_FORWARD"]
+        }
+      },
+      {
+        "data": {
+          "id": "ACC_334401",
+          "label": "Upstream Sender A",
+          "type": "account",
+          "risk": 40,
+          "role": "Contributing Sender",
+          "in_degree_centrality": 0.08,
+          "out_degree_centrality": 0.15,
+          "alerts": ["VELOCITY_SPIKE"]
+        }
+      },
+      {
+        "data": {
+          "id": "ACC_558812",
+          "label": "Upstream Sender B",
+          "type": "account",
+          "risk": 37,
+          "role": "Contributing Sender",
+          "in_degree_centrality": 0.07,
+          "out_degree_centrality": 0.13,
+          "alerts": []
+        }
+      }
+    ],
+    "edges": [
+      {
+        "data": {
+          "id": "e1",
+          "source": "ACC_109283",
+          "target": "ACC_882910",
+          "label": "₹9,500",
+          "amount": 9500,
+          "flagged": true
+        }
+      },
+      {
+        "data": {
+          "id": "e2",
+          "source": "ACC_882910",
+          "target": "DEV_F892B1",
+          "label": "bound_to",
+          "amount": 0,
+          "flagged": false
+        }
+      },
+      {
+        "data": {
+          "id": "e3",
+          "source": "ACC_882910",
+          "target": "ACC_771920",
+          "label": "₹92,000",
+          "amount": 92000,
+          "flagged": true
+        }
+      },
+      {
+        "data": {
+          "id": "e4",
+          "source": "ACC_334401",
+          "target": "ACC_882910",
+          "label": "₹14,200",
+          "amount": 14200,
+          "flagged": true
+        }
+      },
+      {
+        "data": {
+          "id": "e5",
+          "source": "ACC_558812",
+          "target": "ACC_882910",
+          "label": "₹8,900",
+          "amount": 8900,
+          "flagged": false
+        }
+      }
+    ]
+  },
+  "recommended_action": "SIMULATED_HOLD_AND_INVESTIGATE",
+  "blockchain": {
+    "case_id": "TG-2026-00142",
+    "anchored": false,
+    "tx_hash": null,
+    "evidence_hash": null
+  }
+}
