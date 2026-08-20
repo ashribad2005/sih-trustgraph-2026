@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TrustGraph 2026 — Render Blueprint
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy to Render: https://render.com/docs/blueprint-spec
+# 
+# Usage:
+#   1. Push this repo to GitHub/GitLab
+#   2. In Render Dashboard: New → Blueprint → Connect repo
+#   3. Render will auto-detect this file and create all services
+#   4. Add secrets in Render Dashboard (Environment → Secret Files/Variables)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL Database ─────────────────────────────────────────────────────
+  - type: pserv
+    name: trustgraph-db
+    plan: starter  # Upgrade to standard/pro for production
+    region: oregon
+    postgresMajorVersion: 16
+    # Database credentials will be auto-injected as DATABASE_URL
+
+  # ── Django Backend (Web Service) ────────────────────────────────────────────
+  - type: web
+    name: trustgraph-api
+    plan: standard  # Minimum 2GB RAM for ML workloads
+    region: oregon
+    rootDir: backend
+    buildCommand: |
+      pip install -r requirements.txt &&
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn trustgraph_core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: trustgraph-api.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://trustgraph-frontend.onrender.com
+      - key: AI_ENGINE_ENABLED
+        value: "True"
+      - key: RISK_THRESHOLD
+        value: "75"
+      - key: WEB3_RPC_URL
+        sync: false  # Set in dashboard
+      - key: RPC_URL
+        fromService:
+          type: pserv
+          name: trustgraph-db
+          property: connectionString
+      - key: DATABASE_URL
+        fromService:
+          type: pserv
+          name: trustgraph-db
+          property: connectionString
+      # These MUST be set manually in Render Dashboard (Secret Variables):
+      # - WALLET_PRIVATE_KEY
+      # - CONTRACT_ADDRESS
+      # - POLYGONSCAN_API_KEY (optional)
+      # - GEMINI_API_KEY (optional)
+
+  # ── Frontend (Static Site) ──────────────────────────────────────────────────
+  - type: web
+    name: trustgraph-frontend
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm run build
+    startCommand: npx serve -s dist -l $PORT
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://trustgraph-api.onrender.com/api/v1
+    # NOTE: For SPA routing, add a rewrite rule in Render Dashboard:
+    #   Source: /*  →  Destination: /index.html  (Type: Rewrite)
+
+# ─── Optional: Cron Job for Periodic Tasks ────────────────────────────────────
+# Uncomment and configure if you need scheduled tasks
+# - type: cron
+#   name: trustgraph-seed-data
+#   schedule: "0 3 * * *"  # Daily at 3 AM UTC
+#   command: python manage.py seed_data
+#   envVars:
+#     - key: DJANGO_SECRET_KEY
+#       fromService:
+#         type: web
+#         name: trustgraph-api
+#         property: envVars.DJANGO_SECRET_KEY

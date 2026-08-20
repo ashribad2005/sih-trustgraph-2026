@@ -1,7 +1,0 @@
-data/*.json
-data/*.csv
-data/rule_alerts.json
-**/node_modules/
-**/venv/
-**/*.sqlite3
-**/.git/

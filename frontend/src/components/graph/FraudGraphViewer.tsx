@@ -1,663 +1,423 @@
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import CytoscapeComponent from 'react-cytoscapejs';
+import cytoscape from 'cytoscape';
+
 /**
- * frontend/src/components/graph/FraudGraphViewer.tsx
- * ====================================================
- * TrustGraph 2026 — Module 5: Cytoscape.js Graph Intelligence Visualizer
- *
- * React + TypeScript component that renders the fraud network graph using
- * react-cytoscapejs with:
- *   - Risk-based dynamic node colouring & pulsing glow animations
- *   - Directional transaction edges with amount labels & dashed-red flagging
- *   - Interactive Entity Inspector Sidebar (click any node)
- *   - "Verify On-Chain Integrity" trigger with live cryptographic feedback badge
- *
- * Node colour scheme:
- *   High Risk   (≥75)  : Glowing Red    #ef4444  with pulsing border
- *   Medium Risk (40–74): Amber          #f59e0b
- *   Low Risk    (<40)  : Emerald Green  #10b981
- *   Device Nodes       : Blue Diamond   #3b82f6
- *
- * Dependencies:
- *   npm install cytoscape react-cytoscapejs cytoscape-dagre
- *   npm install --save-dev @types/cytoscape @types/react-cytoscapejs
+ * ================================================================
+ * TrustGraph 2026 — FraudGraphViewer (Module M5: Graph Intelligence UI)
+ * ================================================================
+ * 
+ * Visualizes directed financial fraud topologies (Mule Funnels, 
+ * Velocity Bursts, Shared Devices) using Cytoscape.js with COSE layout.
+ * 
+ * DATA CONTRACT (Strict - from Django API):
+ * {
+ *   "elements": [
+ *     { "data": { "id": "acc_1", "label": "john@ybl", "type": "account", "risk_score": 85, "role": "Mule Aggregator" } },
+ *     { "data": { "id": "dev_1", "label": "DEV_9921", "type": "device", "risk_score": 90, "role": "Shared Device" } },
+ *     { "data": { "id": "tx_1", "source": "acc_2", "target": "acc_1", "amount": 5000, "is_flagged": true } }
+ *   ]
+ * }
+ * 
+ * VISUAL ENCODING:
+ * - Accounts: Circular. Green (risk_score < 75), Red (risk_score >= 75)
+ * - Devices: Diamond. Purple
+ * - Edges: Directed arrows. Gray/solid normal; Red/dashed/thick if is_flagged
+ * - Labels: Below nodes (data.label)
+ * 
+ * INTERACTIVITY:
+ * - Tap node → Side inspector panel with id, label, type, role, risk_score progress bar
+ * - Tap background → Close inspector
  */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import CytoscapeComponent from "react-cytoscapejs";
-import type { Core, EventObject, NodeSingular } from "cytoscape";
-import cytoscape from "cytoscape";
-// @ts-ignore — cytoscape-dagre has no official typings
-import dagre from "cytoscape-dagre";
+// ─── Types ────────────────────────────────────────────────────────────────
 
-// Register dagre layout once
-cytoscape.use(dagre);
-
-// ─── Type Definitions ─────────────────────────────────────────────────────────
-
-interface NodeData {
+export interface CytoscapeNodeData {
   id: string;
   label: string;
-  type: "account" | "device";
-  risk: number;
-  role: string;
-  in_degree_centrality?: number;
-  out_degree_centrality?: number;
-  alerts?: string[];
+  type: 'account' | 'device' | 'ip' | 'merchant' | 'unknown';
+  risk_score?: number;
+  role?: string;
+  [key: string]: unknown;
 }
 
-interface EdgeData {
-  id: string;
+export interface CytoscapeEdgeData {
+  id?: string;
   source: string;
   target: string;
-  label: string;
   amount?: number;
-  flagged: boolean;
+  is_flagged?: boolean;
+  label?: string;
+  [key: string]: unknown;
 }
 
-interface GraphData {
-  nodes: Array<{ data: NodeData }>;
-  edges: Array<{ data: EdgeData }>;
+export interface FraudGraphData {
+  elements: Array<{ data: CytoscapeNodeData | CytoscapeEdgeData }>;
 }
-
-interface GraphPayload {
-  tx_id: string;
-  composite_risk_score: number;
-  risk_tier: string;
-  rule_violations: string[];
-  ml_anomaly_score: number;
-  graph_metrics: {
-    in_degree_centrality: number;
-    community_cluster_id: string;
-    shared_device_count: number;
-  };
-  ai_explanations: string[];
-  graph_data: GraphData;
-  recommended_action: string;
-  blockchain?: {
-    case_id: string;
-    anchored: boolean;
-    tx_hash: string | null;
-    evidence_hash: string | null;
-  };
-}
-
-type VerificationStatus = "idle" | "pending" | "verified" | "tampered" | "error";
-
-// ─── Colour / Style Helpers ───────────────────────────────────────────────────
-
-const getRiskColor = (node: NodeData): string => {
-  if (node.type === "device") return "#3b82f6";
-  if (node.risk >= 75) return "#ef4444";
-  if (node.risk >= 40) return "#f59e0b";
-  return "#10b981";
-};
-
-const getRiskLabel = (risk: number): string => {
-  if (risk >= 75) return "HIGH";
-  if (risk >= 40) return "MEDIUM";
-  return "LOW";
-};
-
-const getRiskBadgeClass = (risk: number): string => {
-  if (risk >= 75) return "risk-badge-high";
-  if (risk >= 40) return "risk-badge-medium";
-  return "risk-badge-low";
-};
-
-// ─── Cytoscape Stylesheet ─────────────────────────────────────────────────────
-
-const buildStylesheet = () => [
-  // ── Default node ────────────────────────────────────────────────────────
-  {
-    selector: "node",
-    style: {
-      "background-color": "data(color)",
-      "border-color": "data(borderColor)",
-      "border-width": 3,
-      "border-opacity": 1,
-      label: "data(label)",
-      color: "#f1f5f9",
-      "font-size": "11px",
-      "font-family": "'Inter', 'Segoe UI', sans-serif",
-      "font-weight": "600",
-      "text-valign": "bottom",
-      "text-halign": "center",
-      "text-margin-y": 6,
-      "text-outline-color": "#0f172a",
-      "text-outline-width": 2,
-      width: "data(size)",
-      height: "data(size)",
-      "transition-property": "border-color, border-width, background-color",
-      "transition-duration": "0.3s",
-    } as any,
-  },
-  // ── Device nodes — diamond shape ─────────────────────────────────────────
-  {
-    selector: "node[type = 'device']",
-    style: {
-      shape: "diamond",
-      "background-color": "#3b82f6",
-      "border-color": "#93c5fd",
-    } as any,
-  },
-  // ── High-risk glow ────────────────────────────────────────────────────────
-  {
-    selector: "node[risk >= 75][type != 'device']",
-    style: {
-      "border-color": "#fca5a5",
-      "border-width": 4,
-      "box-shadow": "0 0 18px 6px rgba(239,68,68,0.7)",
-    } as any,
-  },
-  // ── Medium-risk glow ──────────────────────────────────────────────────────
-  {
-    selector: "node[risk >= 40][risk < 75][type != 'device']",
-    style: {
-      "border-color": "#fde68a",
-      "border-width": 3,
-    } as any,
-  },
-  // ── Selected node ─────────────────────────────────────────────────────────
-  {
-    selector: "node:selected",
-    style: {
-      "border-color": "#818cf8",
-      "border-width": 5,
-      "background-color": "data(color)",
-    } as any,
-  },
-  // ── Default edge ──────────────────────────────────────────────────────────
-  {
-    selector: "edge",
-    style: {
-      width: 2,
-      "line-color": "#475569",
-      "target-arrow-color": "#475569",
-      "target-arrow-shape": "triangle",
-      "curve-style": "bezier",
-      label: "data(label)",
-      color: "#94a3b8",
-      "font-size": "9px",
-      "font-family": "'Inter', 'Segoe UI', sans-serif",
-      "text-rotation": "autorotate",
-      "text-margin-y": -8,
-      "text-outline-color": "#0f172a",
-      "text-outline-width": 1.5,
-      "arrow-scale": 1.2,
-    } as any,
-  },
-  // ── Flagged (suspicious) edge ─────────────────────────────────────────────
-  {
-    selector: "edge[flagged = 1]",
-    style: {
-      "line-style": "dashed",
-      "line-color": "#ef4444",
-      "target-arrow-color": "#ef4444",
-      width: 2.5,
-      color: "#fca5a5",
-      "line-dash-pattern": [8, 4],
-    } as any,
-  },
-  // ── Hovered edge ──────────────────────────────────────────────────────────
-  {
-    selector: "edge:selected",
-    style: {
-      "line-color": "#818cf8",
-      "target-arrow-color": "#818cf8",
-      width: 3,
-    } as any,
-  },
-];
-
-// ─── Entity Inspector Sidebar ─────────────────────────────────────────────────
-
-interface InspectorProps {
-  node: NodeData | null;
-  onClose: () => void;
-}
-
-const EntityInspector: React.FC<InspectorProps> = ({ node, onClose }) => {
-  if (!node) return null;
-
-  return (
-    <div className="tg-inspector">
-      {/* Header */}
-      <div className="tg-inspector-header">
-        <div>
-          <p className="tg-inspector-role">{node.role}</p>
-          <h3 className="tg-inspector-title">{node.label}</h3>
-          <p className="tg-inspector-id">{node.id}</p>
-        </div>
-        <button className="tg-inspector-close" onClick={onClose} aria-label="Close inspector">
-          ✕
-        </button>
-      </div>
-
-      {/* Risk score meter */}
-      <div className="tg-inspector-section">
-        <p className="tg-inspector-section-label">COMPOSITE RISK SCORE</p>
-        <div className="tg-risk-meter-row">
-          <span className={`tg-risk-badge ${getRiskBadgeClass(node.risk)}`}>
-            {getRiskLabel(node.risk)}
-          </span>
-          <span className="tg-risk-value">{node.risk} / 100</span>
-        </div>
-        <div className="tg-risk-bar-bg">
-          <div
-            className={`tg-risk-bar-fill ${getRiskBadgeClass(node.risk)}`}
-            style={{ width: `${node.risk}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Node type */}
-      <div className="tg-inspector-section">
-        <p className="tg-inspector-section-label">NODE TYPE</p>
-        <span className="tg-chip">{node.type.toUpperCase()}</span>
-      </div>
-
-      {/* Centrality metrics (accounts only) */}
-      {node.type === "account" && (
-        <div className="tg-inspector-section">
-          <p className="tg-inspector-section-label">GRAPH CENTRALITY</p>
-          <div className="tg-metric-grid">
-            <div className="tg-metric-card">
-              <p className="tg-metric-label">In-Degree</p>
-              <p className="tg-metric-value">
-                {node.in_degree_centrality?.toFixed(2) ?? "—"}
-              </p>
-            </div>
-            <div className="tg-metric-card">
-              <p className="tg-metric-label">Out-Degree</p>
-              <p className="tg-metric-value">
-                {node.out_degree_centrality?.toFixed(2) ?? "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Linked alerts */}
-      {node.alerts && node.alerts.length > 0 && (
-        <div className="tg-inspector-section">
-          <p className="tg-inspector-section-label">LINKED ALERTS</p>
-          <div className="tg-alerts-list">
-            {node.alerts.map((alert) => (
-              <div key={alert} className="tg-alert-chip">
-                <span className="tg-alert-dot" />
-                {alert}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── Verification Badge ───────────────────────────────────────────────────────
-
-interface VerifyBadgeProps {
-  status: VerificationStatus;
-  txHash: string | null;
-}
-
-const VerificationBadge: React.FC<VerifyBadgeProps> = ({ status, txHash }) => {
-  const polygonScanBase = "https://amoy.polygonscan.com/tx";
-
-  if (status === "idle") return null;
-
-  if (status === "pending") {
-    return (
-      <div className="tg-verify-badge tg-verify-pending">
-        <span className="tg-verify-spinner" />
-        <span>Querying Polygon Amoy…</span>
-      </div>
-    );
-  }
-
-  if (status === "verified") {
-    return (
-      <div className="tg-verify-badge tg-verify-ok">
-        <span className="tg-verify-icon">✅</span>
-        <div>
-          <p className="tg-verify-title">VERIFIED ON POLYGON AMOY</p>
-          {txHash && (
-            <a
-              href={`${polygonScanBase}/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tg-verify-link"
-            >
-              {txHash.slice(0, 18)}…
-            </a>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (status === "tampered") {
-    return (
-      <div className="tg-verify-badge tg-verify-tampered">
-        <span className="tg-verify-icon">🚨</span>
-        <div>
-          <p className="tg-verify-title">TAMPER DETECTED</p>
-          <p className="tg-verify-sub">Hash mismatch — evidence integrity compromised</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="tg-verify-badge tg-verify-error">
-      <span className="tg-verify-icon">⚠️</span>
-      <p className="tg-verify-title">Verification unavailable</p>
-    </div>
-  );
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 interface FraudGraphViewerProps {
-  /** JSON payload — defaults to fetching /data/mock_graph.json if not supplied */
-  graphPayload?: GraphPayload;
-  /** Called when verification result is received */
-  onVerificationResult?: (result: { verdict: string; hash: string | null }) => void;
+  graphData: FraudGraphData;
+  className?: string;
 }
 
-const FraudGraphViewer: React.FC<FraudGraphViewerProps> = ({
-  graphPayload: propPayload,
-  onVerificationResult,
-}) => {
-  const cyRef = useRef<Core | null>(null);
+// ─── Component ────────────────────────────────────────────────────────────
 
-  const [payload, setPayload]         = useState<GraphPayload | null>(propPayload ?? null);
-  const [loading, setLoading]         = useState<boolean>(!propPayload);
-  const [error, setError]             = useState<string | null>(null);
-  const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
-  const [verifyStatus, setVerifyStatus] = useState<VerificationStatus>("idle");
-  const [verifyTxHash, setVerifyTxHash] = useState<string | null>(null);
+export default function FraudGraphViewer({ graphData, className = '' }: FraudGraphViewerProps) {
+  const [selectedNode, setSelectedNode] = useState<CytoscapeNodeData | null>(null);
+  const [cyInstance, setCyInstance] = useState<cytoscape.Core | null>(null);
 
-  // ── Fetch mock data if no prop supplied ──────────────────────────────────
-  useEffect(() => {
-    if (propPayload) return;
-    fetch("/data/mock_graph.json")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data: GraphPayload) => {
-        setPayload(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(`Failed to load graph data: ${err.message}`);
-        setLoading(false);
-      });
-  }, [propPayload]);
+  // ─── Transform API elements[] → Cytoscape elements ──────────────────────
+  const elements = useMemo((): cytoscape.ElementDefinition[] => {
+    if (!graphData?.elements) return [];
 
-  // ── Build Cytoscape elements from payload ─────────────────────────────────
-  const elements = React.useMemo(() => {
-    if (!payload) return [];
+    return graphData.elements.map((el, idx) => {
+      const data = el.data || {};
+      const isEdge = 'source' in data && 'target' in data;
 
-    const nodeEls = payload.graph_data.nodes.map((n) => ({
-      data: {
-        ...n.data,
-        color: getRiskColor(n.data),
-        borderColor:
-          n.data.type === "device"
-            ? "#93c5fd"
-            : n.data.risk >= 75
-            ? "#fca5a5"
-            : n.data.risk >= 40
-            ? "#fde68a"
-            : "#6ee7b7",
-        size: n.data.type === "device" ? 40 : Math.max(45, 30 + n.data.risk * 0.35),
-      },
-    }));
+      if (isEdge) {
+        const edgeData = data as CytoscapeEdgeData;
+        return {
+          group: 'edges' as const,
+          data: {
+            id: edgeData.id ?? `edge-${idx}`,
+            source: edgeData.source,
+            target: edgeData.target,
+            label: edgeData.label ?? (edgeData.amount ? `₹${edgeData.amount.toLocaleString()}` : ''),
+            amount: edgeData.amount,
+            is_flagged: edgeData.is_flagged ?? false,
+            ...edgeData,
+          },
+        };
+      }
 
-    const edgeEls = payload.graph_data.edges.map((e) => ({
-      data: {
-        ...e.data,
-        // Cytoscape selectors use numeric comparisons for data properties
-        flagged: e.data.flagged ? 1 : 0,
-      },
-    }));
-
-    return [...nodeEls, ...edgeEls];
-  }, [payload]);
-
-  // ── Cytoscape ready callback ──────────────────────────────────────────────
-  const handleCyReady = useCallback((cy: Core) => {
-    cyRef.current = cy;
-
-    cy.on("tap", "node", (evt: EventObject) => {
-      const node = evt.target as NodeSingular;
-      const data = node.data() as NodeData;
-      setSelectedNode(data);
-    });
-
-    // Deselect on canvas tap
-    cy.on("tap", (evt: EventObject) => {
-      if (evt.target === cy) setSelectedNode(null);
-    });
-
-    // Run layout after mount
-    cy.layout({
-      name: "dagre",
-      rankDir: "LR",
-      padding: 40,
-      spacingFactor: 1.4,
-      nodeSep: 60,
-      rankSep: 100,
-      animate: true,
-      animationDuration: 600,
-    } as any).run();
-  }, []);
-
-  // ── On-chain verification handler ─────────────────────────────────────────
-  const handleVerify = useCallback(async () => {
-    if (!payload) return;
-    setVerifyStatus("pending");
-
-    try {
-      // Build the canonical evidence snapshot (zero-PII fields only)
-      const evidenceSnapshot = {
-        case_id:           payload.blockchain?.case_id ?? `TG-2026-${payload.tx_id}`,
-        tx_id:             payload.tx_id,
-        risk_score:        payload.composite_risk_score,
-        flagged_timestamp: Math.floor(Date.now() / 1000),
-        evidence_fingerprint: "computed_by_audit_service",
+      const nodeData = data as CytoscapeNodeData;
+      return {
+        group: 'nodes' as const,
+        data: {
+          id: nodeData.id,
+          label: nodeData.label,
+          type: nodeData.type ?? 'unknown',
+          risk_score: nodeData.risk_score ?? 0,
+          role: nodeData.role ?? 'N/A',
+          ...nodeData,
+        },
       };
+    });
+  }, [graphData]);
 
-      // Call the backend verify endpoint (falls back gracefully to mock)
-      const res = await fetch("/api/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          case_id: evidenceSnapshot.case_id,
-          evidence_snapshot: evidenceSnapshot,
-        }),
-      });
+  // ─── COSE Layout Config ─────────────────────────────────────────────────
+  const layout = useMemo(() => ({
+    name: 'cose',
+    animate: true,
+    animationDuration: 500,
+    nodeDimensionsIncludeLabels: true,
+    idealEdgeLength: 120,
+    nodeOverlap: 20,
+    nodeRepulsion: 450000,
+    edgeElasticity: 100,
+    nestingFactor: 5,
+    gravity: 80,
+    numIter: 1000,
+    initialTemp: 200,
+    coolingFactor: 0.95,
+    minTemp: 1.0,
+    fit: true,
+    padding: 50,
+    randomize: false,
+    componentSpacing: 120,
+  }), []);
 
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const result = await res.json();
+  // ─── Cytoscape Stylesheet (Visual Encoding) ─────────────────────────────
+  const stylesheet = useMemo((): cytoscape.Stylesheet[] => [
+    {
+      selector: 'node',
+      style: {
+        'label': 'data(label)',
+        'text-valign': 'bottom',
+        'text-halign': 'center',
+        'text-margin-y': 10,
+        'color': '#e2e8f0',
+        'font-size': '11px',
+        'font-weight': '500',
+        'font-family': 'Inter, system-ui, sans-serif',
+        'text-outline-color': '#020617',
+        'text-outline-width': 2,
+        'background-color': '#64748b',
+        'width': 36,
+        'height': 36,
+      },
+    },
+    {
+      selector: 'node[type = "account"]',
+      style: {
+        'shape': 'ellipse',
+        'background-color': (ele: cytoscape.NodeSingular) => {
+          const risk = ele.data('risk_score') ?? 0;
+          return risk >= 75 ? '#ef4444' : '#22c55e';
+        },
+        'border-width': 2,
+        'border-color': '#ffffff',
+        'width': 40,
+        'height': 40,
+      },
+    },
+    {
+      selector: 'node[type = "device"]',
+      style: {
+        'shape': 'diamond',
+        'background-color': '#a855f7',
+        'width': 42,
+        'height': 42,
+        'border-width': 2,
+        'border-color': '#ffffff',
+      },
+    },
+    {
+      selector: 'node[type = "ip"]',
+      style: {
+        'shape': 'hexagon',
+        'background-color': '#f59e0b',
+        'width': 36,
+        'height': 36,
+        'border-width': 2,
+        'border-color': '#ffffff',
+      },
+    },
+    {
+      selector: 'node[type = "merchant"]',
+      style: {
+        'shape': 'barrel',
+        'background-color': '#8b5cf6',
+        'width': 36,
+        'height': 36,
+        'border-width': 2,
+        'border-color': '#ffffff',
+      },
+    },
+    {
+      selector: 'node:selected',
+      style: {
+        'border-width': 4,
+        'border-color': '#fbbf24',
+        'background-color': (ele: cytoscape.NodeSingular) => {
+          const type = ele.data('type');
+          if (type === 'account') {
+            const risk = ele.data('risk_score') ?? 0;
+            return risk >= 75 ? '#ef4444' : '#22c55e';
+          }
+          if (type === 'device') return '#a855f7';
+          if (type === 'ip') return '#f59e0b';
+          return '#8b5cf6';
+        },
+      },
+    },
+    {
+      selector: 'edge',
+      style: {
+        'width': 2,
+        'line-color': '#64748b',
+        'target-arrow-color': '#64748b',
+        'target-arrow-shape': 'triangle',
+        'curve-style': 'bezier',
+        'label': 'data(label)',
+        'color': '#94a3b8',
+        'font-size': '9px',
+        'font-weight': '500',
+        'font-family': 'Inter, system-ui, sans-serif',
+        'text-background-color': '#020617',
+        'text-background-opacity': 0.9,
+        'text-background-padding': '2px',
+        'text-background-shape': 'roundrectangle',
+      },
+    },
+    {
+      selector: 'edge[is_flagged = true]',
+      style: {
+        'line-color': '#ef4444',
+        'target-arrow-color': '#ef4444',
+        'width': 3,
+        'line-style': 'dashed',
+        'text-background-color': '#7f1d1d',
+      },
+    },
+  ], []);
 
-      const status: VerificationStatus =
-        result.verdict === "VERIFIED"
-          ? "verified"
-          : result.verdict === "TAMPER_DETECTED"
-          ? "tampered"
-          : "error";
+  // ─── Event Handlers ─────────────────────────────────────────────────────
 
-      setVerifyStatus(status);
-      setVerifyTxHash(payload.blockchain?.tx_hash ?? null);
-      onVerificationResult?.({ verdict: result.verdict, hash: result.on_chain_hash });
-    } catch {
-      // Graceful fallback — show mock verified badge for standalone/jury demo
-      const anchored = payload.blockchain?.anchored ?? false;
-      setVerifyStatus(anchored ? "verified" : "error");
-      setVerifyTxHash(payload.blockchain?.tx_hash ?? null);
-    }
-  }, [payload, onVerificationResult]);
-
-  // ── Fit graph to viewport ─────────────────────────────────────────────────
-  const handleFit = useCallback(() => {
-    cyRef.current?.fit(undefined, 40);
+  const handleCy = useCallback((cy: cytoscape.Core) => {
+    setCyInstance(cy);
   }, []);
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="tg-graph-loading">
-        <div className="tg-graph-spinner" />
-        <p>Loading fraud graph…</p>
-      </div>
-    );
-  }
+  const handleNodeTap = useCallback((event: { target: cytoscape.NodeSingular }) => {
+    const node = event.target;
+    const data = node.data();
+    setSelectedNode(data as CytoscapeNodeData);
+  }, []);
 
-  if (error) {
-    return (
-      <div className="tg-graph-error">
-        <span>⚠️</span>
-        <p>{error}</p>
-      </div>
-    );
-  }
+  const handleBackgroundTap = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
 
-  if (!payload) return null;
+  // ─── Fit viewport on data change ────────────────────────────────────────
+  useEffect(() => {
+    if (cyInstance && elements.length > 0) {
+      cyInstance.fit(null, 50);
+    }
+  }, [elements, cyInstance]);
 
-  const { composite_risk_score, risk_tier, rule_violations, ai_explanations, graph_metrics } =
-    payload;
-
+  // ─── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="tg-graph-root">
-      {/* ── Top stats bar ────────────────────────────────────────────────── */}
-      <div className="tg-stats-bar">
-        <div className="tg-stat">
-          <span className="tg-stat-label">RISK SCORE</span>
-          <span className={`tg-stat-value ${composite_risk_score >= 75 ? "tg-stat-high" : composite_risk_score >= 40 ? "tg-stat-medium" : "tg-stat-low"}`}>
-            {composite_risk_score}
-          </span>
-        </div>
-        <div className="tg-stat">
-          <span className="tg-stat-label">TIER</span>
-          <span className={`tg-stat-value ${risk_tier === "CRITICAL" ? "tg-stat-high" : "tg-stat-medium"}`}>
-            {risk_tier}
-          </span>
-        </div>
-        <div className="tg-stat">
-          <span className="tg-stat-label">ML ANOMALY</span>
-          <span className="tg-stat-value tg-stat-high">
-            {(payload.ml_anomaly_score * 100).toFixed(0)}%
-          </span>
-        </div>
-        <div className="tg-stat">
-          <span className="tg-stat-label">CLUSTER</span>
-          <span className="tg-stat-value tg-stat-cluster">
-            {graph_metrics.community_cluster_id}
-          </span>
-        </div>
-        <div className="tg-stat">
-          <span className="tg-stat-label">VIOLATIONS</span>
-          <span className="tg-stat-value tg-stat-high">{rule_violations.length}</span>
-        </div>
-
-        {/* Verify button */}
-        <button
-          id="tg-verify-btn"
-          className="tg-verify-btn"
-          onClick={handleVerify}
-          disabled={verifyStatus === "pending"}
-        >
-          🔗 Verify On-Chain
-        </button>
-      </div>
-
-      {/* ── Rule violation chips ──────────────────────────────────────────── */}
-      <div className="tg-violations-bar">
-        {rule_violations.map((v) => (
-          <span key={v} className="tg-violation-chip">
-            {v}
-          </span>
-        ))}
-      </div>
-
-      {/* ── Verification badge (appears after trigger) ─────────────────────── */}
-      <VerificationBadge status={verifyStatus} txHash={verifyTxHash} />
-
-      {/* ── Graph canvas + sidebar ────────────────────────────────────────── */}
-      <div className="tg-graph-canvas-area">
-        {/* Cytoscape */}
-        <div className="tg-graph-canvas">
-          <CytoscapeComponent
-            elements={elements}
-            stylesheet={buildStylesheet() as any}
-            style={{ width: "100%", height: "100%" }}
-            cy={handleCyReady}
-            userZoomingEnabled
-            userPanningEnabled
-            boxSelectionEnabled={false}
-          />
-
-          {/* Fit button */}
-          <button
-            className="tg-fit-btn"
-            onClick={handleFit}
-            title="Fit graph to viewport"
-            aria-label="Fit graph"
-          >
-            ⊞
-          </button>
-
-          {/* Legend */}
-          <div className="tg-legend">
-            <div className="tg-legend-item">
-              <span className="tg-legend-dot" style={{ background: "#ef4444" }} />
-              High Risk (≥75)
-            </div>
-            <div className="tg-legend-item">
-              <span className="tg-legend-dot" style={{ background: "#f59e0b" }} />
-              Medium Risk (40–74)
-            </div>
-            <div className="tg-legend-item">
-              <span className="tg-legend-dot" style={{ background: "#10b981" }} />
-              Low Risk (&lt;40)
-            </div>
-            <div className="tg-legend-item">
-              <span className="tg-legend-dot" style={{ background: "#3b82f6", transform: "rotate(45deg)" }} />
-              Shared Device
-            </div>
-            <div className="tg-legend-item">
-              <span className="tg-legend-dashed" />
-              Flagged Transfer
-            </div>
+    <div className={`flex flex-col h-full bg-slate-900 rounded-xl border border-slate-800 overflow-hidden ${className}`}>
+      {/* Header Bar */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-950/50 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-purple-500" aria-hidden="true" />
+            <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Fraud Network</h3>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              <span>Accounts: {elements.filter(e => e.group === 'nodes' && e.data.type === 'account').length}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              <span>Devices: {elements.filter(e => e.group === 'nodes' && e.data.type === 'device').length}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              <span>Flagged Edges: {elements.filter(e => e.group === 'edges' && e.data.is_flagged).length}</span>
+            </span>
           </div>
         </div>
-
-        {/* Entity inspector sidebar */}
-        {selectedNode && (
-          <EntityInspector
-            node={selectedNode}
-            onClose={() => setSelectedNode(null)}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => cyInstance?.fit(null, 50)}
+            className="p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
+            title="Fit to Screen"
+            aria-label="Fit Graph"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4-4l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* ── AI Explanations panel ──────────────────────────────────────────── */}
-      <div className="tg-ai-panel">
-        <p className="tg-ai-panel-title">🤖 AI-Generated Fraud Explanations</p>
-        <ul className="tg-ai-explanations">
-          {ai_explanations.map((exp, i) => (
-            <li key={i} className="tg-ai-explanation-item">
-              <span className="tg-ai-bullet">▶</span>
-              {exp}
-            </li>
-          ))}
-        </ul>
+      {/* Graph Canvas + Inspector */}
+      <div className="flex-1 flex relative min-h-0">
+        {/* Cytoscape Canvas */}
+        <div className="flex-1 relative min-w-0">
+          <CytoscapeComponent
+            elements={elements}
+            stylesheet={stylesheet}
+            layout={layout}
+            style={{ width: '100%', height: '100%' }}
+            cy={handleCy}
+            onTapNode={handleNodeTap}
+            onTap={handleBackgroundTap}
+          />
+        </div>
+
+        {/* Inspector Side Panel */}
+        {selectedNode && (
+          <div className="w-72 sm:w-80 bg-slate-950 border-l border-slate-800 flex flex-col overflow-hidden animate-slide-in">
+            {/* Inspector Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+              <h4 className="text-sm font-semibold text-slate-100">Node Inspector</h4>
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="p-1 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
+                aria-label="Close inspector"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Inspector Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* ID */}
+              <div>
+                <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider mb-1">ID</p>
+                <p className="font-mono text-sm text-slate-200 break-all">{selectedNode.id}</p>
+              </div>
+
+              {/* Label */}
+              <div>
+                <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider mb-1">Label</p>
+                <p className="text-base font-medium text-slate-100 break-all">{selectedNode.label}</p>
+              </div>
+
+              {/* Type & Role */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider mb-1">Type</p>
+                  <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded text-xs capitalize text-slate-300">
+                    {selectedNode.type}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider mb-1">Role</p>
+                  <span className="inline-flex items-center px-2 py-1 bg-slate-800 rounded text-xs text-slate-300">
+                    {selectedNode.role}
+                  </span>
+                </div>
+              </div>
+
+              {/* Risk Score Progress Bar */}
+              {selectedNode.risk_score !== undefined && (
+                <div className="pt-2 border-t border-slate-800">
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider">Risk Score</p>
+                    <p className={`text-sm font-bold ${(selectedNode.risk_score as number) >= 75 ? 'text-red-400' : 'text-green-400'}`}>
+                      {selectedNode.risk_score}/100
+                    </p>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className={`h-2.5 rounded-full transition-all duration-500 ${(selectedNode.risk_score as number) >= 75 ? 'bg-red-500' : 'bg-green-500'}`}
+                      style={{ width: `${Math.min(selectedNode.risk_score as number, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Metadata */}
+              {selectedNode && Object.keys(selectedNode).length > 5 && (
+                <div className="pt-2 border-t border-slate-800">
+                  <p className="text-[10px] uppercase text-slate-500 font-semibold tracking-wider mb-2">Additional Data</p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {Object.entries(selectedNode)
+                      .filter(([key]) => !['id', 'label', 'type', 'risk_score', 'role'].includes(key))
+                      .map(([key, value]) => (
+                        <div key={key} className="flex justify-between text-sm">
+                          <span className="text-slate-500 capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="font-mono text-slate-300 truncate max-w-[60%] text-right">
+                            {value !== null && value !== undefined ? String(value) : 'N/A'}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {elements.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+            <div className="text-center p-8">
+              <svg className="w-16 h-16 mx-auto text-slate-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <p className="text-sm">No graph data available</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default FraudGraphViewer;
+}

@@ -1,0 +1,84 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TrustGraph 2026 — Docker Compose (Production)
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
+#
+# Prerequisites:
+#   - .env.prod file with all production secrets (never commit this!)
+#   - PostgreSQL database (managed service recommended for production)
+#   - Domain names configured with SSL/TLS termination (reverse proxy)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL Database (Production - use managed service in real prod) ──────
+  # NOTE: For true production, use a managed PostgreSQL (RDS, Cloud SQL, etc.)
+  # and remove this service, using DATABASE_URL instead.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-trustgraph_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Django Backend (API + AI Engine) ────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      - DB_HOST=db
+      - DJANGO_SETTINGS_MODULE=trustgraph_core.settings
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./audit_service.py:/app/audit_service.py:ro
+      - ./rule_engine.py:/app/rule_engine.py:ro
+      - ./data:/app/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput &&
+        gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 4 --timeout 120 trustgraph_core.wsgi:application
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Vite Frontend (Production Nginx) ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:
