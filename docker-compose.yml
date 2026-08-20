@@ -1,0 +1,75 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TrustGraph 2026 — Docker Compose (Development)
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   cp .env.example .env          # Edit secrets as needed
+#   docker compose up --build     # Start all services
+#   docker compose exec backend python manage.py createsuperuser
+#   docker compose exec backend python manage.py seed_data
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-trustgraph_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Django Backend (API + AI Engine) ─────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./audit_service.py:/app/audit_service.py:ro
+      - ./rule_engine.py:/app/rule_engine.py:ro
+      - ./data:/app/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python manage.py migrate --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+  # ── Vite Frontend (Dev Server) ──────────────────────────────────────────
+  frontend:
+    image: node:20-slim
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000/api/v1
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev -- --host 0.0.0.0
+      "
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
