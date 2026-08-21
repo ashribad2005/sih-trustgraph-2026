@@ -3,7 +3,7 @@ import type { Case, CaseDossier, DashboardMetrics } from '../types/case';
 import type { GraphData } from '../types/graph';
 import type { Transaction } from '../types/transaction';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // ─── Token Storage ────────────────────────────────────────────────────────────
 export const tokenStorage = {
