@@ -1,7 +1,9 @@
 /* ─── Google Fonts ─────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ─── Design Tokens ────────────────────────────────────────────────────────── */
 :root {
@@ -43,24 +45,6 @@
   --color-warning: #F59E0B;
   --color-critical: #EF4444;
   --color-indigo-accent: #6366F1;
-}
-
-@theme {
-  --color-background: var(--color-bg);
-  --color-surface: var(--color-surface);
-  --color-surface-secondary: var(--color-surface-secondary);
-  --color-surface-elevated: var(--color-surface-elevated);
-  --color-text-primary: var(--color-text-primary);
-  --color-text-secondary: var(--color-text-secondary);
-  --color-text-muted: var(--color-text-muted);
-  --color-text-subtle: var(--color-text-subtle);
-  --color-border: var(--color-border);
-  --color-primary: var(--color-primary);
-  --color-primary-hover: var(--color-primary-hover);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
-  --color-critical: var(--color-critical);
-  --color-indigo-accent: var(--color-indigo-accent);
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */

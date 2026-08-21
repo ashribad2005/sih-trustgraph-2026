@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
 
+
 /**
  * ================================================================
  * TrustGraph 2026 — FraudGraphViewer (Module M5: Graph Intelligence UI)
@@ -85,7 +86,6 @@ export default function FraudGraphViewer({ graphData, className = '' }: FraudGra
             label: edgeData.label ?? (edgeData.amount ? `₹${edgeData.amount.toLocaleString()}` : ''),
             amount: edgeData.amount,
             is_flagged: edgeData.is_flagged ?? false,
-            ...edgeData,
           },
         };
       }
@@ -99,7 +99,6 @@ export default function FraudGraphViewer({ graphData, className = '' }: FraudGra
           type: nodeData.type ?? 'unknown',
           risk_score: nodeData.risk_score ?? 0,
           role: nodeData.role ?? 'N/A',
-          ...nodeData,
         },
       };
     });
@@ -128,7 +127,7 @@ export default function FraudGraphViewer({ graphData, className = '' }: FraudGra
   }), []);
 
   // ─── Cytoscape Stylesheet (Visual Encoding) ─────────────────────────────
-  const stylesheet = useMemo((): cytoscape.Stylesheet[] => [
+  const stylesheet = useMemo((): Record<string, unknown>[] => [
     {
       selector: 'node',
       style: {
@@ -261,7 +260,7 @@ export default function FraudGraphViewer({ graphData, className = '' }: FraudGra
   // ─── Fit viewport on data change ────────────────────────────────────────
   useEffect(() => {
     if (cyInstance && elements.length > 0) {
-      cyInstance.fit(null, 50);
+      cyInstance.fit(undefined, 50);
     }
   }, [elements, cyInstance]);
 
@@ -292,7 +291,7 @@ export default function FraudGraphViewer({ graphData, className = '' }: FraudGra
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => cyInstance?.fit(null, 50)}
+            onClick={() => cyInstance?.fit(undefined, 50)}
             className="p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors"
             title="Fit to Screen"
             aria-label="Fit Graph"

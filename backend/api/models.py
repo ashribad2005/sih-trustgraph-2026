@@ -25,7 +25,7 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     timestamp = models.DateTimeField()
     device_id = models.CharField(max_length=255, blank=True, default='')
-    ip_address = models.GenericIPAddressField(blank=True, default='0.0.0.0')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     channel = models.CharField(max_length=50, blank=True, default='UPI')
     status = models.CharField(
         max_length=50,

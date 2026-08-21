@@ -43,8 +43,8 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
         network_interception_rate: data.network_interception_rate ?? 0,
       });
       setIsUsingMockData(false);
-    } catch (err: any) {
-      console.warn('[useDashboardMetrics] Backend unavailable, using mock metrics');
+    } catch (err: unknown) {
+      console.warn('[useDashboardMetrics] Backend unavailable, using mock metrics', err);
       setMetrics(MOCK_METRICS);
       setIsUsingMockData(true);
     } finally {
