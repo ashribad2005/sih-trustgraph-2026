@@ -19,18 +19,19 @@ const ALERT_REFRESH_MS = 30_000;
 
 export default function Dashboard() {
   const {
-    alerts: liveCases,
-    isLoading: alertsLoading,
+    cases: liveCases,
+    loading: alertsLoading,
     error: alertsError,
-    refetch: loadAlerts,
-    isUsingMockData,
+    refreshCases: loadAlerts,
   } = useCases();
+
+  const isUsingMockData = liveCases.length === 0 && !alertsLoading && !alertsError;
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   // Sync live cases into local state (allows optimistic updates)
   useEffect(() => {
-    setAlerts(liveCases);
+    setAlerts(liveCases as unknown as Alert[]);
   }, [liveCases]);
 
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);

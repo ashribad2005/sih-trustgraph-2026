@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import FraudGraphViewer from './graph/FraudGraphViewer';
+import FraudGraphViewer, { type CytoscapeNodeData, type CytoscapeEdgeData } from './graph/FraudGraphViewer';
 import type { GraphData } from '../types/graph';
 
 interface CaseInvestigationProps {
@@ -17,21 +17,25 @@ export default function CaseInvestigation({ selectedCase }: CaseInvestigationPro
     
     // Transform GraphData (nodes/edges) to FraudGraphViewer format (elements)
     const elements = [
-      ...selectedCase.graph_data.nodes.map(node => ({
+      ...selectedCase.graph_data.nodes.map((node, idx) => ({
         data: {
           id: node.id,
           label: node.label,
           type: node.type,
           status: node.status,
+          risk_score: node.metadata?.risk_score as number | undefined,
+          role: node.metadata?.role as string | undefined,
         }
       })),
       ...selectedCase.graph_data.edges.map((edge, idx) => ({
         data: {
-          id: `edge-${idx}`,
+          id: edge.id ?? `edge-${idx}`,
           source: edge.source,
           target: edge.target,
           label: edge.label,
           type: edge.type,
+          amount: edge.metadata?.amount as number | undefined,
+          is_flagged: edge.metadata?.is_flagged as boolean | undefined,
         }
       }))
     ];
