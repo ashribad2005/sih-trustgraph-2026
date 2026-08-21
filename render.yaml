@@ -11,7 +11,7 @@ services:
     name: trustgraph-api
     runtime: docker
     rootDir: backend
-    plan: starter
+    plan: free
     region: oregon
     envVars:
       - key: DATABASE_URL
