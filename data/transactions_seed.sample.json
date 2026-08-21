@@ -1,0 +1,24 @@
+{
+  "transactions": [
+    {
+      "tx_id": "TXN_SAMPLE_001",
+      "timestamp": "2026-08-16T14:32:00Z",
+      "sender_account": "ACC_SAMPLE_001",
+      "receiver_account": "ACC_SAMPLE_002",
+      "amount": 1250.00,
+      "channel": "UPI",
+      "device_id": "DEV_SAMPLE_001",
+      "ip_address": "203.0.113.10"
+    },
+    {
+      "tx_id": "TXN_SAMPLE_002",
+      "timestamp": "2026-08-16T14:36:00Z",
+      "sender_account": "ACC_SAMPLE_003",
+      "receiver_account": "ACC_SAMPLE_002",
+      "amount": 7800.00,
+      "channel": "UPI",
+      "device_id": "DEV_SAMPLE_002",
+      "ip_address": "203.0.113.11"
+    }
+  ]
+}

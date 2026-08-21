@@ -32,8 +32,8 @@ services:
   # ── Django Backend (API + AI Engine) ────────────────────────────────────────
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env.prod

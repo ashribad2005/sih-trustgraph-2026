@@ -32,3 +32,9 @@ node_modules/
 .vscode/
 .idea/
 nul
+
+# --- Generated datasets, models, and build metadata ---
+data/transactions_seed.json
+data/transactions_stream.csv
+backend/ai_engine/model.pkl
+*.tsbuildinfo

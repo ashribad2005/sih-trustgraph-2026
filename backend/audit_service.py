@@ -39,7 +39,7 @@ from web3.middleware import ExtraDataToPOAMiddleware
 # ─── Environment ──────────────────────────────────────────────────────────────
 load_dotenv()
 
-RPC_URL           = os.getenv("RPC_URL", "")
+RPC_URL           = os.getenv("WEB3_RPC_URL") or os.getenv("RPC_URL", "")
 WALLET_PRIVATE_KEY = os.getenv("WALLET_PRIVATE_KEY", "")
 CONTRACT_ADDRESS  = os.getenv("CONTRACT_ADDRESS", "")
 CHAIN_ID          = int(os.getenv("CHAIN_ID", "80002"))          # Polygon Amoy default

@@ -3,7 +3,12 @@ import type { Case, CaseDossier, DashboardMetrics } from '../types/case';
 import type { GraphData } from '../types/graph';
 import type { Transaction } from '../types/transaction';
 
-const API_BASE_URL = 'https://trustgraph-api.onrender.com/api/v1';
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = configuredApiBaseUrl || (
+  import.meta.env.DEV
+    ? 'http://localhost:8000/api/v1'
+    : 'https://trustgraph-api.onrender.com/api/v1'
+);
 
 // ─── Token Storage ────────────────────────────────────────────────────────────
 export const tokenStorage = {
@@ -54,8 +59,9 @@ apiClient.interceptors.response.use(
 export const apiService = {
   // Cases API
   async getCases(): Promise<Case[]> {
-    const response = await apiClient.get<Case[]>('/cases/');
-    return response.data;
+    const response = await apiClient.get<Case[] | { results: Case[] }>('/cases/');
+    const payload = response.data;
+    return Array.isArray(payload) ? payload : payload.results;
   },
 
   async getCaseById(caseId: string | number): Promise<CaseDossier> {
@@ -76,7 +82,14 @@ export const apiService = {
   },
 
   // Blockchain Verification API
-  async verifyAuditHash(caseId: string | number): Promise<{ verified: boolean; on_chain_hash: string; block_number?: number }> {
+  async verifyAuditHash(caseId: string | number): Promise<{
+    is_tampered: boolean;
+    verdict: string;
+    on_chain_hash: string | null;
+    local_hash: string;
+    hashes_match: boolean;
+    verification_available: boolean;
+  }> {
     const response = await apiClient.get(`/cases/${caseId}/verify-integrity/`);
     return response.data;
   },

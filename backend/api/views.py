@@ -110,7 +110,7 @@ class TransactionIngestView(APIView):
         with transaction.atomic():
             # ── Idempotency check ────────────────────────────────────────────
             if Transaction.objects.filter(tx_id=valid_data['tx_id']).exists():
-                raise ValueError(f"Transaction ID {valid_data['tx_id']} already exists.")
+                raise ValueError("Transaction ID already exists.")
 
             # ── Create or get accounts ───────────────────────────────────────
             sender, _ = Account.objects.get_or_create(account_id=valid_data['sender_account'])

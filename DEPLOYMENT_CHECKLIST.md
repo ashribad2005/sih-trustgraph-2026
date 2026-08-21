@@ -71,8 +71,8 @@ cp .env.prod.example .env.prod
 # 2. Deploy
 docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 
-# 3. Initialize DB
-docker compose -f docker-compose.prod.yml exec backend python manage.py migrate
+# 3. Initialize DB (container startup runs this idempotently)
+docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
 docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
 docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data
 
@@ -102,7 +102,7 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Uses SQLite by default (no PostgreSQL needed)
+# Set SECRET_KEY in the repository-level .env; leave DATABASE_URL empty for SQLite.
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py seed_data
@@ -155,11 +155,11 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/cases/TG-202
 |-------|------------------|----------|
 | Backend health | `curl /api/v1/health/` | `200 OK` |
 | Auth works | Login via frontend | JWT token returned |
-| Case list | `GET /api/v1/cases/` | Array of cases |
+| Case list | `GET /api/v1/cases/` | Paginated response with `results` |
 | Graph data | `GET /api/v1/cases/{id}/` | `graph_data` present |
 | Dashboard metrics | `GET /api/v1/dashboard/metrics/` | KPIs with correct field names |
 | Blockchain anchor | Ingest high-risk tx | `anchor_tx_hash` in case |
-| Integrity verify | `POST /verify-integrity/` | `verified: true` |
+| Integrity verify | `GET /api/v1/cases/{id}/verify-integrity/` | `is_tampered: false` or `verdict: LOCAL_VERIFIED` |
 | Frontend loads | Open in browser | Dashboard renders |
 | Graph renders | Click case → Graph tab | Cytoscape graph visible |
 
@@ -172,7 +172,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/cases/TG-202
 | `WALLET_PRIVATE_KEY` | Backend only | New wallet + MATIC faucet |
 | `CONTRACT_ADDRESS` | Backend only | `npx hardhat run deploy_audit.js` |
 | `DATABASE_URL` | Backend only | Managed PostgreSQL provider |
-| `DJANGO_SECRET_KEY` | Backend only | `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `SECRET_KEY` | Backend only | `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())" |
 | `GEMINI_API_KEY` | Backend only | https://aistudio.google.com/apikey |
 | `POLYGONSCAN_API_KEY` | Backend only | https://polygonscan.com/apis |
 | `VITE_API_BASE_URL` | Frontend build | Your backend URL |
@@ -188,7 +188,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/cases/TG-202
 | CORS error | Set `CORS_ALLOWED_ORIGINS` to exact frontend domain |
 | Blockchain fail | Check wallet has MATIC, correct chain ID (80002) |
 | ML slow | Ensure 4GB+ RAM, `MALLOC_ARENA_MAX=2` |
-| Migration fail | `python manage.py migrate --fake-initial` |
+| Migration fail | Inspect the migration error and database connection; do not use `--fake` in production without an explicit recovery plan |
 
 ---
 
