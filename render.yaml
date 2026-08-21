@@ -1,9 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# TrustGraph 2026 — Render Blueprint
-# ─────────────────────────────────────────────────────────────────────────────
-# Deploy to Render: https://render.com/docs/blueprint-spec
-
-# 1. Define the PostgreSQL Database
 databases:
   - name: trustgraph-db
     databaseName: trustgraph
@@ -12,20 +6,15 @@ databases:
     region: oregon
     postgresMajorVersion: "16"
 
-# 2. Define your Django API
 services:
   - type: web
     name: trustgraph-api
     runtime: docker
+    rootDir: backend
     plan: starter
     region: oregon
-    rootDir: backend
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: trustgraph-db
-          property: connectionString
-      - key: RPC_URL
         fromDatabase:
           name: trustgraph-db
           property: connectionString
@@ -33,25 +22,3 @@ services:
         generateValue: true
       - key: DEBUG
         value: "False"
-      - key: ALLOWED_HOSTS
-        value: trustgraph-api.onrender.com
-      - key: CORS_ALLOWED_ORIGINS
-        value: https://trustgraph-frontend.onrender.com
-      - key: AI_ENGINE_ENABLED
-        value: "True"
-      - key: RISK_THRESHOLD
-        value: "75"
-      - key: WEB3_RPC_URL
-        sync: false
-
-  # ── Frontend (Static Site) ──────────────────────────────────────────────────
-  - type: web
-    name: trustgraph-frontend
-    plan: free
-    region: oregon
-    rootDir: frontend
-    buildCommand: npm run build
-    startCommand: npx serve -s dist -l $PORT
-    envVars:
-      - key: VITE_API_BASE_URL
-        value: https://trustgraph-api.onrender.com/api/v1
