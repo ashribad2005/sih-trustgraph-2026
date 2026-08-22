@@ -161,13 +161,15 @@ class BlockchainService:
         # Build the evidence dict (same structure as used during anchoring).
         case_data = _build_case_data(case)
 
-        # Cases can exist before the optional blockchain anchor is available.
-        # Verify their stored local evidence hash without opening an RPC client.
+        # Cases can exist before an optional blockchain anchor is available.
+        # In deterministic MOCK mode, the persisted evidence hash is the stable
+        # audit record; mock chain state is intentionally not process-persistent.
         local_hash = EvidenceService.generate_evidence_hash(case_data)
-        if not case.blockchain_tx_hash:
+        if not case.blockchain_tx_hash or getattr(settings, "BLOCKCHAIN_MODE", "MOCK") == "MOCK":
             stored_hash = (case.evidence_hash or "").lower()
             hashes_match = bool(stored_hash) and stored_hash == local_hash.lower()
-            verdict = "LOCAL_VERIFIED" if hashes_match else (
+            mock_mode = getattr(settings, "BLOCKCHAIN_MODE", "MOCK") == "MOCK"
+            verdict = ("MOCK_VERIFIED" if mock_mode else "LOCAL_VERIFIED") if hashes_match else (
                 "TAMPER_DETECTED" if stored_hash else "NOT_ANCHORED"
             )
             return {
@@ -179,8 +181,8 @@ class BlockchainService:
                 "hashes_match": hashes_match,
                 "on_chain_risk_score": case.risk_score,
                 "timestamp": int(case.created_at.timestamp()),
-                "logged_by": "",
-                "verification_available": False,
+                "logged_by": "mock" if mock_mode else "",
+                "verification_available": hashes_match,
             }
 
         try:

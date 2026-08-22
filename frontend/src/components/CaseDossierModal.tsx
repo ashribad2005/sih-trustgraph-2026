@@ -16,13 +16,31 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
   const [copied, setCopied] = useState<boolean>(false);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+  const [actioning, setActioning] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   if (!open || !caseData) return null;
+
+  const transaction = caseData.transaction;
+  const evidenceHash = caseData.evidence_hash ?? caseData.audit_hash ?? '';
 
   const handleCopyHash = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleInvestigatorAction = async (action: 'DISMISS' | 'CONFIRM_FRAUD' | 'HOLD') => {
+    try {
+      setActioning(action);
+      setActionError(null);
+      await apiService.actionCase(caseData.case_id, action);
+      onActionSuccess?.(caseData.case_id, action === 'HOLD' ? 'HOLD' : action === 'DISMISS' ? 'FALSE_POSITIVE' : 'CONFIRM_FRAUD');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to update case status');
+    } finally {
+      setActioning(null);
+    }
   };
 
   const handleVerifyOnChain = async () => {
@@ -91,6 +109,24 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
             </div>
           )}
 
+          {/* Transaction context */}
+          <div className="grid grid-cols-2 gap-3 bg-slate-950/60 border border-slate-800 p-4 rounded-xl text-xs">
+            <div><span className="text-slate-500">Transaction</span><p className="font-mono text-slate-200 mt-1">{caseData.tx_id ?? transaction?.tx_id ?? 'Unavailable'}</p></div>
+            <div><span className="text-slate-500">Amount</span><p className="text-slate-200 mt-1">₹{Number(caseData.amount ?? transaction?.amount ?? 0).toLocaleString('en-IN')}</p></div>
+            <div><span className="text-slate-500">Sender → Receiver</span><p className="font-mono text-slate-200 mt-1">{caseData.sender_account_id ?? transaction?.sender ?? 'Unknown'} → {caseData.receiver_account_id ?? transaction?.receiver ?? 'Unknown'}</p></div>
+            <div><span className="text-slate-500">Triggered rules</span><p className="text-slate-200 mt-1">{caseData.triggered_rules?.length ?? 0}</p></div>
+          </div>
+
+          {((caseData.ai_explanations?.length ?? 0) > 0 || (caseData.triggered_rules?.length ?? 0) > 0) && (
+            <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">AI Forensic Findings</h3>
+              <ul className="space-y-1 text-xs text-slate-300 list-disc list-inside">
+                {(caseData.triggered_rules ?? []).map((rule) => <li key={rule}>{rule}</li>)}
+                {(caseData.ai_explanations ?? []).map((explanation, index) => <li key={`${explanation}-${index}`}>{explanation}</li>)}
+              </ul>
+            </div>
+          )}
+
           {/* Blockchain Audit Hash */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
@@ -104,11 +140,11 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
               <input
                 type="text"
                 readOnly
-                value={caseData.audit_hash || '0x0000000000000000000000000000000000000000'}
+                value={evidenceHash || 'Evidence hash pending'}
                 className="bg-slate-900 text-slate-300 font-mono text-xs px-3 py-2 rounded-lg border border-slate-800 flex-1 select-all"
               />
               <button
-                onClick={() => handleCopyHash(caseData.audit_hash || '')}
+                onClick={() => handleCopyHash(evidenceHash)}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
                 title="Copy Hash"
               >
@@ -124,16 +160,23 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
               </button>
             </div>
 
+            {caseData.blockchain_tx_hash && (
+              <p className="text-xs text-slate-400">Blockchain transaction: <span className="font-mono text-slate-300 break-all">{caseData.blockchain_tx_hash}</span></p>
+            )}
+
             {verificationResult && (() => {
               const verified = verificationResult.verdict === 'VERIFIED'
-                || verificationResult.verdict === 'LOCAL_VERIFIED';
+                || verificationResult.verdict === 'LOCAL_VERIFIED'
+                || verificationResult.verdict === 'MOCK_VERIFIED';
               const displayedHash = verificationResult.on_chain_hash
                 || verificationResult.local_hash
                 || 'Verification query failed';
               return (
                 <div className={`p-3 rounded-lg text-xs border ${verified ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-red-950/40 border-red-800 text-red-300'}`}>
                   {verified
-                    ? 'Cryptographic match confirmed. Audit record is verified.'
+                    ? verificationResult.verdict === 'MOCK_VERIFIED'
+                      ? 'Cryptographic match confirmed in deterministic mock-chain mode.'
+                      : 'Cryptographic match confirmed. Audit record is verified.'
                     : `Hash mismatch or record unconfirmed: ${displayedHash}`}
                 </div>
               );
@@ -142,13 +185,14 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-950/60 border-t border-slate-800 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors"
-          >
-            Dismiss Dossier
-          </button>
+        <div className="px-6 py-4 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          {actionError && <p className="text-xs text-red-300">{actionError}</p>}
+          <div className="flex flex-wrap gap-2 ml-auto">
+            <button onClick={() => handleInvestigatorAction('HOLD')} disabled={Boolean(actioning)} className="px-3 py-2 bg-amber-700 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50">{actioning === 'HOLD' ? 'Saving…' : 'Keep Under Review'}</button>
+            <button onClick={() => handleInvestigatorAction('CONFIRM_FRAUD')} disabled={Boolean(actioning)} className="px-3 py-2 bg-red-700 hover:bg-red-600 text-white text-xs font-semibold rounded-lg disabled:opacity-50">{actioning === 'CONFIRM_FRAUD' ? 'Saving…' : 'Confirm Fraud'}</button>
+            <button onClick={() => handleInvestigatorAction('DISMISS')} disabled={Boolean(actioning)} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg disabled:opacity-50">{actioning === 'DISMISS' ? 'Saving…' : 'Dismiss'}</button>
+            <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs font-semibold rounded-lg transition-colors">Close</button>
+          </div>
         </div>
       </div>
     </div>

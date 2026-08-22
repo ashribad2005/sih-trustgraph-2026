@@ -10,25 +10,42 @@ from api.models import Account, Transaction
 
 
 class Command(BaseCommand):
-    help = "Seed transactions from a JSON file without requiring a generated bulk dataset."
+    help = (
+        "Seed transactions from a JSON file. With --process, run every new "
+        "transaction through the live rules, ML, graph, evidence, and blockchain pipeline."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--file",
-            default="data/transactions_seed.sample.json",
-            help="Path to a JSON file, relative to the repository root or absolute.",
+            default="data/transactions_seed.demo.json",
+            help="Path to a JSON file, relative to the backend directory or absolute.",
         )
+        parser.add_argument(
+            "--process",
+            action="store_true",
+            help="Run seeded transactions through the full fraud-detection pipeline.",
+        )
+
+    def _resolve_seed_file(self, requested_path: Path) -> Path | None:
+        if requested_path.is_absolute():
+            candidates = [requested_path]
+        else:
+            # The first location is used by the Docker image (WORKDIR=/app).
+            # The second keeps compatibility with repository-root invocations.
+            candidates = [
+                Path(settings.BASE_DIR) / requested_path,
+                Path(settings.BASE_DIR).parent / requested_path,
+            ]
+        return next((candidate for candidate in candidates if candidate.exists()), None)
 
     def handle(self, *args, **options):
         requested_path = Path(options["file"])
-        seed_file = (
-            requested_path
-            if requested_path.is_absolute()
-            else Path(settings.BASE_DIR).parent / requested_path
-        )
-
-        if not seed_file.exists():
-            self.stdout.write(self.style.ERROR(f"Seed file not found at {seed_file}"))
+        seed_file = self._resolve_seed_file(requested_path)
+        if seed_file is None:
+            self.stdout.write(
+                self.style.ERROR(f"Seed file not found for requested path: {requested_path}")
+            )
             return
 
         try:
@@ -42,6 +59,17 @@ class Command(BaseCommand):
         created_count = 0
         skipped_count = 0
         invalid_count = 0
+        case_count = 0
+        anchored_count = 0
+
+        pipeline = None
+        serializer_class = None
+        if options["process"]:
+            from api.serializers import TransactionIngestSerializer
+            from api.views import TransactionIngestView
+
+            pipeline = TransactionIngestView()
+            serializer_class = TransactionIngestSerializer
 
         for item in transactions_list:
             tx_id = item.get("tx_id")
@@ -50,11 +78,30 @@ class Command(BaseCommand):
                 continue
 
             try:
-                with transaction.atomic():
-                    if Transaction.objects.filter(tx_id=tx_id).exists():
-                        skipped_count += 1
+                if Transaction.objects.filter(tx_id=tx_id).exists():
+                    skipped_count += 1
+                    continue
+
+                if options["process"]:
+                    serializer = serializer_class(data=item)
+                    if not serializer.is_valid():
+                        invalid_count += 1
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Invalid transaction {tx_id}: {serializer.errors}"
+                            )
+                        )
                         continue
 
+                    result = pipeline._process_transaction(serializer.validated_data)
+                    created_count += 1
+                    if result.get("case_id"):
+                        case_count += 1
+                    if result.get("blockchain", {}).get("anchored"):
+                        anchored_count += 1
+                    continue
+
+                with transaction.atomic():
                     sender_id = item.get("sender_account")
                     receiver_id = item.get("receiver_account")
                     amount = item.get("amount")
@@ -67,7 +114,6 @@ class Command(BaseCommand):
                     if timestamp_str.endswith("Z"):
                         timestamp_str = timestamp_str[:-1] + "+00:00"
                     timestamp = datetime.fromisoformat(timestamp_str)
-
                     sender, _ = Account.objects.get_or_create(account_id=sender_id)
                     receiver, _ = Account.objects.get_or_create(account_id=receiver_id)
 
@@ -87,7 +133,11 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"Failed to process {tx_id}: {exc}"))
                 invalid_count += 1
 
-        self.stdout.write(self.style.SUCCESS("Seed command completed."))
+        mode = "full pipeline" if options["process"] else "raw transaction import"
+        self.stdout.write(self.style.SUCCESS(f"Seed command completed ({mode})."))
         self.stdout.write(f"Created: {created_count}")
         self.stdout.write(f"Skipped: {skipped_count}")
         self.stdout.write(f"Invalid: {invalid_count}")
+        if options["process"]:
+            self.stdout.write(f"Fraud cases: {case_count}")
+            self.stdout.write(f"Blockchain anchors: {anchored_count}")

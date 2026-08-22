@@ -147,6 +147,15 @@ SIMPLE_JWT = {
 
 AI_ENGINE_ENABLED = env_bool("AI_ENGINE_ENABLED", True)
 RISK_THRESHOLD = env_int("RISK_THRESHOLD", 75)
+BLOCKCHAIN_MODE = (
+    "LIVE"
+    if all(os.environ.get(name, "").strip() for name in (
+        "WEB3_RPC_URL",
+        "CONTRACT_ADDRESS",
+        "WALLET_PRIVATE_KEY",
+    ))
+    else "MOCK"
+)
 
 
 # CORS and CSRF are allowlisted in production. Local development retains the

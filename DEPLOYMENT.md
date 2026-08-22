@@ -62,7 +62,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 # Migrations run automatically during container start; this is an optional idempotent check.
 docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
 docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
-docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data
+docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data --process
 ```
 
 ---
@@ -145,12 +145,20 @@ npx hardhat verify --network polygonAmoy <CONTRACT_ADDRESS>
 2. **Use the Render Blueprint** (render.yaml in repo root):
    - In Render Dashboard: New → Blueprint → Connect repo
    - Render auto-creates PostgreSQL + Web Service
-3. **Set Secrets in Render Dashboard** (Environment → Secret Variables):
-   - `WALLET_PRIVATE_KEY` — Service wallet private key
-   - `CONTRACT_ADDRESS` — Deployed audit contract address
-   - `POLYGONSCAN_API_KEY` (optional) — For contract verification
-   - `GEMINI_API_KEY` (optional) — For AI explanations
-4. **Deploy** — Render builds and deploys automatically
+3. **Set Environment Variables in Render Dashboard** (Environment):
+   - `SECRET_KEY` — Render can generate this through the Blueprint
+   - `DATABASE_URL` — Use the PostgreSQL connection string from the Render database
+   - `DEBUG=False`
+   - `ALLOWED_HOSTS=trustgraph-api.onrender.com`
+   - `CORS_ALLOWED_ORIGINS=https://<your-vercel-domain>`
+   - `AI_ENGINE_ENABLED=True`
+   - `RISK_THRESHOLD=75`
+   - `WEB3_RPC_URL`, `CONTRACT_ADDRESS`, and `WALLET_PRIVATE_KEY` — optional for live Polygon anchoring; without them the app reports transparent deterministic MOCK anchoring
+4. **Deploy** — Render builds from `backend/Dockerfile`. Container startup runs migrations, processes `backend/data/transactions_seed.demo.json` through rules + ML + graph + evidence hashing + blockchain mode, and then starts Gunicorn.
+5. **Create an operator account** in the Render Shell after the first successful deploy:
+   ```bash
+   python manage.py createsuperuser
+   ```
 
 #### Frontend → Render Static Site
 
@@ -159,8 +167,9 @@ npx hardhat verify --network polygonAmoy <CONTRACT_ADDRESS>
    - **Root Directory**: `frontend`
    - **Build Command**: `npm run build`
    - **Publish Directory**: `dist`
-3. **Environment Variable**: `VITE_API_BASE_URL=https://your-api.onrender.com/api/v1`
-4. **Add Rewrite Rule** (Settings → Redirects/Rewrites):
+3. **Environment Variable**: `VITE_API_BASE_URL=https://trustgraph-api.onrender.com/api/v1`
+4. **Set the Render backend variable** `CORS_ALLOWED_ORIGINS` to the exact Vercel origin, without a trailing slash.
+5. **Add Rewrite Rule** (Settings → Redirects/Rewrites):
    - Source: `/*` → Destination: `/index.html` (Type: Rewrite)
 
 ### Option B: Railway / Fly.io / DigitalOcean App Platform
@@ -192,7 +201,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 # Migrations run automatically during container start; this is an optional idempotent check.
 docker compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
 docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
-docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data
+docker compose -f docker-compose.prod.yml exec backend python manage.py seed_data --process
 
 # 4. Configure reverse proxy (nginx/Traefik/Caddy) with SSL
 #    Point your domain to the frontend container (port 80)
@@ -211,7 +220,7 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py seed_dat
 - [ ] Fund the blockchain wallet with test MATIC (or real MATIC for mainnet)
 - [ ] Set `CONTRACT_ADDRESS` to the deployed contract
 - [ ] Create a superuser on the production server
-- [ ] Run `seed_data` or wait for real transaction ingestion
+- [ ] Confirm automatic `seed_data --process` created demo cases, evidence hashes, and blockchain-mode records
 - [ ] Configure SSL/TLS (automatic on Render/Vercel/Netlify)
 - [ ] Set up monitoring (Render metrics, Datadog, etc.)
 - [ ] Configure backup strategy for PostgreSQL

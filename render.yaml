@@ -13,10 +13,6 @@ services:
     rootDir: backend
     plan: free
     region: oregon
-    dockerCommand: >-
-      /bin/sh -c "python manage.py migrate --noinput && exec gunicorn
-      --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4 --timeout 120
-      trustgraph_core.wsgi:application"
     healthCheckPath: /api/v1/health/
     envVars:
       - key: DATABASE_URL
@@ -32,6 +28,8 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         value: https://trustgraph-frontend-xi.vercel.app
       - key: AI_ENGINE_ENABLED
+        value: "True"
+      - key: SEED_DEMO_DATA
         value: "True"
       - key: RISK_THRESHOLD
         value: "75"

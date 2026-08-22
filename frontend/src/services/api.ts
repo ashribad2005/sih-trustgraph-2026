@@ -82,6 +82,11 @@ export const apiService = {
   },
 
   // Blockchain Verification API
+  async actionCase(caseId: string | number, action: 'DISMISS' | 'CONFIRM_FRAUD' | 'HOLD'): Promise<CaseDossier> {
+    const response = await apiClient.post<CaseDossier>(`/cases/${caseId}/action/`, { action });
+    return response.data;
+  },
+
   async verifyAuditHash(caseId: string | number): Promise<{
     is_tampered: boolean;
     verdict: string;

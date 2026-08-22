@@ -7,6 +7,12 @@ export interface DashboardMetrics {
   total_screened_transactions: number;
   active_high_risk_cases: number;
   network_interception_rate: number;
+  active_fraud_clusters?: number;
+  accounts_under_watch?: number;
+  shared_devices?: number;
+  high_centrality_entities?: number;
+  largest_cluster?: string;
+  blockchain_mode?: 'LIVE' | 'MOCK';
 }
 
 // ─── Live Alert (maps to mock & backend alert stream) ─────────────────────────
@@ -58,6 +64,9 @@ export interface CaseTransaction {
   composite_risk_score: number;
   risk_tier: string;
   status: string;
+  sender?: string;
+  receiver?: string;
+  device_id?: string;
 }
 
 // ─── Case ─────────────────────────────────────────────────────────────────────
@@ -66,6 +75,18 @@ export interface Case {
   case_id: string;
   tx_id?: string;
   risk_score?: number;
+  composite_risk_score?: number;
+  risk_tier?: string;
+  alert_id?: string;
+  timestamp?: string;
+  sender_account_id?: string;
+  receiver_account_id?: string;
+  amount?: number;
+  currency?: string;
+  triggered_rules?: string[];
+  ai_explanations?: string[];
+  evidence_hash?: string | null;
+  blockchain_tx_hash?: string | null;
   fraud_type?: string;
   status?: string;
   description?: string;
