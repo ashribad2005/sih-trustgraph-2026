@@ -114,6 +114,18 @@ class TrustGraphAIService:
             0.4 * rule_result.rule_risk_score
             + 0.6 * ml_result.anomaly_score * 100
         )
+        # Preserve strong deterministic signals while the ML model is still
+        # warming up. This prevents high-confidence rule violations from being
+        # hidden by a cold-start anomaly score.
+        if rule_result.has_violations:
+            composite = max(
+                composite,
+                min(
+                    100,
+                    (rule_result.rule_risk_score * 2)
+                    + int(ml_result.anomaly_score * 25),
+                ),
+            )
         composite = max(0, min(100, composite))
 
         risk_tier = _determine_risk_tier(composite)

@@ -209,7 +209,10 @@ class FraudCaseViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/v1/cases/{id}/  → Detail with graph payload
     """
     permission_classes = [IsAuthenticated]
-    queryset = FraudCase.objects.all().order_by('-risk_score', '-created_at')
+    queryset = FraudCase.objects.select_related(
+        'transaction__sender',
+        'transaction__receiver',
+    ).all().order_by('-risk_score', '-created_at')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -294,6 +297,36 @@ class DashboardMetricsView(APIView):
             blockchain_tx_hash=''
         ).count()
 
+        # Network summary values are calculated from the persisted graph inputs.
+        active_case_rows = list(active_cases.select_related(
+            "transaction__sender",
+            "transaction__receiver",
+        ))
+        accounts_under_watch = {
+            account_id
+            for case in active_case_rows
+            for account_id in (
+                case.transaction.sender_id,
+                case.transaction.receiver_id,
+            )
+        }
+        shared_devices = Transaction.objects.values("device_id").annotate(
+            sender_count=Count("sender", distinct=True),
+        ).filter(device_id__gt="", sender_count__gt=1).count()
+        high_centrality_entities = Transaction.objects.values("receiver_id").annotate(
+            incoming_count=Count("tx_id"),
+        ).filter(incoming_count__gte=3).count()
+        cluster_keys = {
+            case.transaction.device_id
+            for case in active_case_rows
+            if case.transaction.device_id
+        }
+        active_fraud_clusters = len(cluster_keys) or (1 if active_case_rows else 0)
+        largest_cluster = (
+            f"CLUSTER_{next(iter(sorted(cluster_keys)))}"
+            if cluster_keys else "NO_ACTIVE_CLUSTERS"
+        )
+
         # Network interception rate = (anchored / total_screened) * 100
         # If no transactions screened, rate is 100% (nothing to intercept)
         if total_screened > 0:
@@ -306,4 +339,10 @@ class DashboardMetricsView(APIView):
             "total_screened_transactions": total_screened,
             "active_high_risk_cases": active_high_risk_cases,
             "network_interception_rate": network_interception_rate,
+            "active_fraud_clusters": active_fraud_clusters,
+            "accounts_under_watch": len(accounts_under_watch),
+            "shared_devices": shared_devices,
+            "high_centrality_entities": high_centrality_entities,
+            "largest_cluster": largest_cluster,
+            "blockchain_mode": getattr(settings, "BLOCKCHAIN_MODE", "MOCK"),
         })
