@@ -42,4 +42,4 @@ EXPOSE 8000
 
 # Use gunicorn with slightly lower workers to avoid memory exhaustion from scikit-learn/networkx
 # Adjust threads or workers based on the target instance size.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "120", "trustgraph_core.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4 --timeout 120 trustgraph_core.wsgi:application"]

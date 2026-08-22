@@ -15,9 +15,12 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
+
+from .evidence_service import EvidenceService
 
 logger = logging.getLogger("trustgraph.blockchain_service")
 
@@ -27,7 +30,21 @@ _backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
-from audit_service import AuditService, AnchorResult, VerifyResult  # noqa: E402
+if TYPE_CHECKING:
+    from audit_service import AnchorResult, AuditService, VerifyResult
+
+
+def _build_case_data(case) -> dict[str, Any]:
+    """Build the PII-free, stable evidence snapshot used by all hash checks."""
+    return {
+        "case_id": case.case_id,
+        "tx_id": case.transaction.tx_id,
+        "sender": case.transaction.sender.account_id,
+        "receiver": case.transaction.receiver.account_id,
+        "amount": f"{float(case.transaction.amount):.2f}",
+        "risk_score": case.risk_score,
+        "rules": case.triggered_rules,
+    }
 
 
 class BlockchainService:
@@ -40,13 +57,27 @@ class BlockchainService:
     """
 
     def __init__(self) -> None:
-        self._audit_service = AuditService()
-        self._risk_threshold = int(os.getenv("RISK_THRESHOLD", "75"))
-        logger.info(
-            "[BlockchainService] Initialized (mock=%s, threshold=%d)",
-            self._audit_service._mock_mode,
-            self._risk_threshold,
-        )
+        # Do not construct AuditService here. Its live mode creates a Web3
+        # provider and checks RPC connectivity, which must never happen while
+        # Django imports URL configuration during process startup.
+        self._audit_service: "AuditService | None" = None
+        self._audit_service_lock = threading.Lock()
+        self._risk_threshold = int(getattr(settings, "RISK_THRESHOLD", 75))
+
+    def _get_audit_service(self) -> "AuditService":
+        """Create the audit client only when a blockchain operation is needed."""
+        if self._audit_service is None:
+            with self._audit_service_lock:
+                if self._audit_service is None:
+                    from audit_service import AuditService
+
+                    self._audit_service = AuditService()
+                    logger.info(
+                        "[BlockchainService] Initialized (mock=%s, threshold=%d)",
+                        self._audit_service._mock_mode,
+                        self._risk_threshold,
+                    )
+        return self._audit_service
 
     def anchor_if_high_risk(self, case) -> dict[str, Any] | None:
         """
@@ -69,14 +100,8 @@ class BlockchainService:
             )
             return None
 
-        # Build the evidence dict for hashing (NO PII)
-        case_data = {
-            "case_id": case.case_id,
-            "tx_id": case.transaction.tx_id,
-            "risk_score": case.risk_score,
-            "triggered_rules": case.triggered_rules,
-            "amount": f"{float(case.transaction.amount):.2f}",
-        }
+        # Build the evidence dict for hashing (NO PII).
+        case_data = _build_case_data(case)
 
         # Determine recommended action from risk tier
         action_map = {
@@ -88,7 +113,8 @@ class BlockchainService:
         action = action_map.get(case.risk_tier, "FLAG_FOR_REVIEW")
 
         try:
-            result: AnchorResult = self._audit_service.anchor_case_on_chain(
+            audit_service = self._get_audit_service()
+            result: AnchorResult = audit_service.anchor_case_on_chain(
                 case_id=case.case_id,
                 case_data=case_data,
                 risk_score=case.risk_score,
@@ -132,24 +158,41 @@ class BlockchainService:
         Returns:
             Dict with verification result including verdict, hash comparison, etc.
         """
-        # Build the evidence dict (same structure as used during anchoring)
-        case_data = {
-            "case_id": case.case_id,
-            "tx_id": case.transaction.tx_id,
-            "risk_score": case.risk_score,
-            "triggered_rules": case.triggered_rules,
-            "amount": f"{float(case.transaction.amount):.2f}",
-        }
+        # Build the evidence dict (same structure as used during anchoring).
+        case_data = _build_case_data(case)
+
+        # Cases can exist before the optional blockchain anchor is available.
+        # Verify their stored local evidence hash without opening an RPC client.
+        local_hash = EvidenceService.generate_evidence_hash(case_data)
+        if not case.blockchain_tx_hash:
+            stored_hash = (case.evidence_hash or "").lower()
+            hashes_match = bool(stored_hash) and stored_hash == local_hash.lower()
+            verdict = "LOCAL_VERIFIED" if hashes_match else (
+                "TAMPER_DETECTED" if stored_hash else "NOT_ANCHORED"
+            )
+            return {
+                "case_id": case.case_id,
+                "is_tampered": verdict == "TAMPER_DETECTED",
+                "verdict": verdict,
+                "on_chain_hash": None,
+                "local_hash": local_hash,
+                "hashes_match": hashes_match,
+                "on_chain_risk_score": case.risk_score,
+                "timestamp": int(case.created_at.timestamp()),
+                "logged_by": "",
+                "verification_available": False,
+            }
 
         try:
-            result: VerifyResult = self._audit_service.verify_case_integrity(
+            audit_service = self._get_audit_service()
+            result: VerifyResult = audit_service.verify_case_integrity(
                 case_id=case.case_id,
                 local_case_data=case_data,
             )
 
             return {
                 "case_id": result.case_id,
-                "is_tampered": not result.is_valid,
+                "is_tampered": result.verdict == "TAMPER_DETECTED",
                 "verdict": result.verdict,
                 "on_chain_hash": result.on_chain_hash,
                 "local_hash": result.computed_local_hash,
@@ -157,7 +200,7 @@ class BlockchainService:
                 "on_chain_risk_score": result.on_chain_risk_score,
                 "timestamp": result.timestamp,
                 "logged_by": result.logged_by,
-                "verification_available": True,
+                "verification_available": result.verdict not in {"CASE_NOT_FOUND", "CHAIN_ERROR"},
             }
 
         except Exception as e:

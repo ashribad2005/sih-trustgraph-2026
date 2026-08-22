@@ -30,13 +30,14 @@ services:
   # ── Django Backend (API + AI Engine) ─────────────────────────────────────
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env
     environment:
       - DB_HOST=db
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-trustgraph_db}
     ports:
       - "8000:8000"
     volumes:

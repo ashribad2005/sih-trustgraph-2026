@@ -9,12 +9,12 @@ The backend includes memory-intensive data science libraries (`scikit-learn`, `n
 1. **Docker Build:** Uses a multi-stage `Dockerfile` (already provided in `backend/Dockerfile`) to compile C-extensions safely and keep the runtime image lean.
 2. **Memory Considerations:** The Dockerfile explicitly sets `MALLOC_ARENA_MAX=2` to prevent memory fragmentation and limits Gunicorn to 2 workers to avoid exceeding memory limits on 2GB-4GB instances.
 3. **Environment Variables Needed on Production:**
-   - `DJANGO_SECRET_KEY`: Long, random string.
+   - `SECRET_KEY`: Long, random string; this variable is required and has no production fallback.
    - `DEBUG`: `False`
    - `ALLOWED_HOSTS`: `<your-production-domain>`
    - `CORS_ALLOWED_ORIGINS`: `<your-frontend-domain>`
    - `DATABASE_URL`: Managed PostgreSQL URL.
-   - `RPC_URL`: https://rpc-amoy.polygon.technology or your Alchemy/Infura endpoint.
+   - `WEB3_RPC_URL`: Polygon Amoy RPC endpoint; `RPC_URL` remains accepted for compatibility.
    - `WALLET_PRIVATE_KEY`: **CRITICAL** Inject this securely. Do NOT hardcode.
    - `CONTRACT_ADDRESS`: The deployed Audit Contract address.
 

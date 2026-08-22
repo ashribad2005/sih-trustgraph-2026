@@ -3,6 +3,8 @@ import { CaseDossier } from '../types/case';
 import { apiService } from '../services/api';
 import { X, ShieldAlert, CheckCircle2, AlertTriangle, Copy, Check, ExternalLink } from 'lucide-react';
 
+type VerificationResult = Awaited<ReturnType<typeof apiService.verifyAuditHash>>;
+
 interface CaseDossierModalProps {
   open: boolean;
   onClose: () => void;
@@ -13,7 +15,7 @@ interface CaseDossierModalProps {
 export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClose, caseData, onActionSuccess }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [verifying, setVerifying] = useState<boolean>(false);
-  const [verificationResult, setVerificationResult] = useState<{ verified: boolean; on_chain_hash: string } | null>(null);
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
 
   if (!open || !caseData) return null;
 
@@ -29,7 +31,14 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
       const res = await apiService.verifyAuditHash(caseData.id ?? caseData.case_id);
       setVerificationResult(res);
     } catch (err) {
-      setVerificationResult({ verified: false, on_chain_hash: 'Verification Query Failed' });
+      setVerificationResult({
+        is_tampered: false,
+        verdict: 'CHAIN_ERROR',
+        on_chain_hash: null,
+        local_hash: '',
+        hashes_match: false,
+        verification_available: false,
+      });
     } finally {
       setVerifying(false);
     }
@@ -115,13 +124,20 @@ export const CaseDossierModal: React.FC<CaseDossierModalProps> = ({ open, onClos
               </button>
             </div>
 
-            {verificationResult && (
-              <div className={`p-3 rounded-lg text-xs border ${verificationResult.verified ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-red-950/40 border-red-800 text-red-300'}`}>
-                {verificationResult.verified
-                  ? 'Cryptographic match confirmed on Polygon Amoy. Audit record is immutable and verified.'
-                  : `Hash mismatch or record unconfirmed: ${verificationResult.on_chain_hash}`}
-              </div>
-            )}
+            {verificationResult && (() => {
+              const verified = verificationResult.verdict === 'VERIFIED'
+                || verificationResult.verdict === 'LOCAL_VERIFIED';
+              const displayedHash = verificationResult.on_chain_hash
+                || verificationResult.local_hash
+                || 'Verification query failed';
+              return (
+                <div className={`p-3 rounded-lg text-xs border ${verified ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-red-950/40 border-red-800 text-red-300'}`}>
+                  {verified
+                    ? 'Cryptographic match confirmed. Audit record is verified.'
+                    : `Hash mismatch or record unconfirmed: ${displayedHash}`}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
